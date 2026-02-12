@@ -62,13 +62,53 @@
   •Prints a summary of failure/success at the end
   ```
 
-- lit 针对不同后缀找对应指令，比如.ll .mlir:
+- lit 针对不同后缀找过滤指令，比如.ll .mlir:
   ```
   Using these directives, lit determines the following:
   1. Requirements: Does this test need to be run?
-  2. Command: How is this test run?
+  2. Command: How is this test run? 如：
+     ; RUN: echo %s %t
   3. Status: At the end of the run, is this result a pass or a failure?
   ```
   <img width="1200" height="600" alt="image" src="https://github.com/user-attachments/assets/4f4c99a6-a40a-4760-b26d-426fda338a62" />
   <img width="1210" height="278" alt="image" src="https://github.com/user-attachments/assets/ae51133f-22f3-4623-9a2a-c4a539a13b5e" />
 
+- Lit Command里的符号替换:
+  <img width="866" height="250" alt="image" src="https://github.com/user-attachments/assets/44936571-295b-482b-b0a0-1a73ee39d7e8" />
+  ```
+  ./bin/llvm-lit test/CodeGen/AArch64/GlobalISel/
+
+  -s Silent: Only print a progress bar and the final report
+  -v Verbose: Print the RUN lines and the output of a test on failure
+  -a Print all: Same as verbose but for all tests, not just the failing ones
+  ```
+  <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
+- Command示例：
+  ```
+  FileCheck --input-file input.txt check-file.txt
+  
+  input.txt 
+  I feel
+  great
+  today
+  How about you?
+  This line doesn’t matter
+  as well as this one
+  I don’t know
+  Meh
+  The end
+  or is it?
+  
+  check-file.txt
+  CHECK: I
+  CHECK-SAME: feel
+  CHECK: great
+  CHECK-NEXT: today
+  CHECK: How about you?
+  CHECK-DAG: Meh
+  CHECK-DAG: I don
+  CHECK-NOT: or is it
+  CHECK: The end
+  CHECK: or is it
+  ```
+  <img width="882" height="552" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
