@@ -1,4 +1,6 @@
 #### 章节目的
+<img width="640" height="2132" alt="image" src="https://github.com/user-attachments/assets/c175d1a0-c3b1-4c18-a227-3f804627eb75" />
+
 - Understand the different components that make a compiler
 - Build and test the LLVM project
 - Navigate LLVM’s directory structure and locate the implementation of different components
@@ -82,7 +84,7 @@
   -v Verbose: Print the RUN lines and the output of a test on failure
   -a Print all: Same as verbose but for all tests, not just the failing ones
   ```
-  <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
+  
 - Command示例：
   ```
   FileCheck --input-file input.txt check-file.txt
@@ -112,3 +114,4 @@
   CHECK: or is it
   ```
   <img width="882" height="552" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
+  <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
