@@ -114,5 +114,27 @@
   CHECK: or is it
   ```
   <img width="882" height="552" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
+  <img width="2006" height="1044" alt="image" src="https://github.com/user-attachments/assets/0e6bbc70-93d2-4e82-bb1f-f429c9fc35f0" />
+  - 有check-label后，划分匹配区域，label后面的check仅匹配当前块
+    ```
+    define %struct.C* @C_ctor_base(...) {
+    entry:
+    ; CHECK-LABEL: C_ctor_base:
+    ; CHECK: mov [[SAVETHIS:r[0-9]+]], r0
+    ; CHECK: bl A_ctor_base
+    ; CHECK: mov r0, [[SAVETHIS]]
+      ...
+    }
+    
+    define %struct.D* @D_ctor_base(...) {
+    entry:
+    ; CHECK-LABEL: D_ctor_base:
+    ```
   - FileCheck支持选项
   <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
+
+- CMAKE使用再详细介绍
+#### 更多详细文档
+- LLVM FileCheck https://llvm.org/docs/CommandGuide/FileCheck.html
+- LLVM BUILDING https://llvm.org/docs/CMake.html
+- CMAKE 11 CHS https://cmake.org/cmake/help/latest/guide/tutorial/index.html
