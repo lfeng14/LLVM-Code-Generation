@@ -15,12 +15,12 @@
   ```
   1. Frontend: This validates that the input file is syntactically and semantically correct and
   produces the LLVM IR.
-  •Preprocessor: This expands macros (e.g., #include).
-  •Sema: This validates the syntax and semantics of the program.
-  •Codegen: This produces the LLVM IR.
+    •Preprocessor: This expands macros (e.g., #include).
+    •Sema: This validates the syntax and semantics of the program.
+    •Codegen: This produces the LLVM IR.
   2. Backend: This translates the LLVM IR to target specific instructions.
-  •Middle-end optimizations: LLVM IR to LLVM IR optimizations.
-  •Assembly generation: Target-specific IR to assembly code.
+    •Middle-end optimizations: LLVM IR to LLVM IR optimizations.
+    •Assembly generation: Target-specific IR to assembly code.
   3. Assembler: This translates assembly code to an object file.
   ```
 - Here are the options to inspect their results(逐步深入不同阶段):
@@ -47,24 +47,30 @@
   ```
 - 主要产物:
   ```
-  •opt: Build the driver for the LLVM IR to LLVM IR optimizations.
-  •llc: Build the driver for the LLVM IR to assembly/object file pipeline.
-  •llvm-mc: Build the tool to play with the assembling/disassembling mechanism.
-  •check: Run all the core LLVM unit tests. This target will rebuild automatically all the tools that
-  are involved in the unit tests, including the aforementioned targets
+    •opt: Build the driver for the LLVM IR to LLVM IR optimizations.
+    •llc: Build the driver for the LLVM IR to assembly/object file pipeline.
+    •llvm-mc: Build the tool to play with the assembling/disassembling mechanism.
+    •check: Run all the core LLVM unit tests. This target will rebuild automatically all the tools that are involved in the unit tests, including the aforementioned targets
   ```
 
 - test llvm
   - LLVM uses the Google test infrastructure (gtest) for some of its unit tests.
   - The LLVM Integrated Tester (lit) drives a lot of the LLVM testing infrastructure.
+  
   ```
+  There are two kinds of unit tests in LLVM that are logically separated into two different folders of your build directory
+  •unittests: This contains the tests that are directly generated from the related directory of the LLVM source (${LLVM_SRC}/llvm/unittests). These tests are written using gtest.
+  •test: This contains the output scripts used by lit. The actual tests live in the related directory of the LLVM source (${LLVM_SRC}/llvm/test). 比如 make check clang
   In a nutshell, this tester does the following:
-  •Discovers the tests to be run
-  •Runs them concurrently
-  •Prints a summary of failure/success at the end
+    •Discovers the tests to be run
+    •Runs them concurrently
+    •Prints a summary of failure/success at the end
   ```
 
 - lit 针对不同后缀找过滤指令，比如.ll .mlir:
+  <img width="746" height="542" alt="image" src="https://github.com/user-attachments/assets/8ea31ecb-0123-44b8-a1dd-3e9c7aa21f42" />
+  
+
   ```
   Using these directives, lit determines the following:
   1. Requirements: Does this test need to be run?
@@ -134,7 +140,21 @@
   <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
 
 - CMAKE使用再详细介绍
+
+
+#### 思考
+- 假如我要写openjdk java用例，你建议使用llvm-lit + FileCheck这一套来处理吗 ？
+  - 我理解了，函数单元测试建议用jtreg+断言，而llvm的lit测试用来黑盒测试，匹配二进制执行输出，两者功能有差异
+    ```
+    JTreg + 断言（或 JUnit） 是白盒测试，直接验证程序内部状态、返回值、异常等运行时行为，测的是“代码逻辑对不对”。
+    lit + FileCheck 是黑盒测试，通过命令行驱动程序，只验证输出文本是否符合预期模式，测的是“工具链输出对不对”。
+    两者功能互补、场景隔离，不存在谁替代谁。在 OpenJDK 开发中，JTreg 是官方主力；而在 LLVM 生态中，lit+FileCheck 是标准配置。把正确的工具用在正确的地方，这正是工程经验的体现。
+  
+    另外补充一个小点：lit+FileCheck 不仅限于测试二进制执行输出，它可以测试任何命令行工具生成的标准输出/错误，包括 javac --help、clang -v、opt -passes 等纯文本输出。它本质上是一个文本契约测试工具。
+    ```
+- 作者想表达：单元测试只是编译器验证的第一道防线，通过了不代表编译器真的能生成正确的可执行代码；你必须学会如何运行生成的程序，并验证它的输出是否符合预期，这才是真正的功能测试
 #### 更多详细文档
+- 本书配套仓库 https://github.com/PacktPublishing/LLVM-Code-Generation/tree/main/ch1/FileCheckExamples/ex3
 - LLVM FileCheck https://llvm.org/docs/CommandGuide/FileCheck.html
 - LLVM BUILDING https://llvm.org/docs/CMake.html
 - CMAKE 11 CHS https://cmake.org/cmake/help/latest/guide/tutorial/index.html
