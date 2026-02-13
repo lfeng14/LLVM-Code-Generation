@@ -20,3 +20,5 @@
   - Explain how the observed behavior departs from the expected behavior
   - Add labels to help identify which component is at fault if you can
 
+- 请不要为那些修复成本极低的问题提交 issue——写报告的时间可能比修 bug 还长，这类问题只会无谓地挤占 bug 跟踪系统的资源。
+  - The idea here is to avoid flooding the bug tracker with things that take more time to file than fixing them.
