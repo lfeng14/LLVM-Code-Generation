@@ -140,7 +140,14 @@
   <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
 
 - CMAKE使用再详细介绍
-
+- 功能行测试失败：1、编译失败 2、编译没问题二进制有功能问题
+  ```
+  If you are lucky, the bug will fail the
+  compilation. For instance, it will crash the compiler, and in this case, you are back to debugging a
+  regular C++ application except the application is your compiler. If you are less fortunate, you may
+  have to deal with a miscompile: the compilation process worked fine, but the application fails its
+  correctness test.
+  ```
 
 #### 思考
 - 假如我要写openjdk java用例，你建议使用llvm-lit + FileCheck这一套来处理吗 ？
