@@ -114,4 +114,5 @@
   CHECK: or is it
   ```
   <img width="882" height="552" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
+  - FileCheck支持选项
   <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
