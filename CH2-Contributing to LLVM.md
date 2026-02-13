@@ -1,0 +1,22 @@
+- Contributing to an open source project can take many forms. Here are a few examples that we will cover in this chapter:
+  - Reporting issues
+  - Engaging in conversations in the public forum
+  - Reviewing code
+  - Contributing patches
+- Include the configuration:
+  - The version of LLVM
+  - The OS
+  - How LLVM was built
+  - Anything that you think may be relevant (e.g., host CPU, etc.)
+  - Upload the reduced input
+  - Provide the steps to reproduce
+    - Download myCoupleTensOfLines.ll
+    - Run opt -passes=YY myCoupleTensOfLines.ll
+    - Measure the compile time
+    - Download myCoupleTensOfLinesWithASmallTweak.ll
+    - Run opt -passes=YY myCoupleTensOfLinesWithASmallTweak.ll
+    - Measure the compile time
+    - Notice how the small tweak increases the compile time by 10x
+  - Explain how the observed behavior departs from the expected behavior
+  - Add labels to help identify which component is at fault if you can
+
