@@ -181,7 +181,87 @@
    • MachineBasicBlock instances can have zero or several terminator instructions.
    • MachineBasicBlock instances offer a direct API to traverse their predecessors and successors through predXXX and succXXX methods. 
   ```
-
+- llvm instruction method: moveBefore, moveAfter, insertBefore gerParent
+- llvm machine instruction method: MachineInstr::defs()) and arguments (MachineInstr::uses())
+- CFG: The first node executed in a CFG is called the entry point, and the last possible ones are called exit points
+- LLVM offers an API, named ReversePostOrderTraversal, to use RPO on your functions out of the box. This API is part of the ADT library.A reverse post-order (RPO) traversal defines an order in which the nodes of a CFG are visited.
+  ```
+   Here is an example of using an RPO traversal in the LLVM IR:
+   ReversePostOrderTraversal<Function *> RPOT(&MyFunction);
+   For (BasicBlock *BB: RPOT) {
+   // Do something in topological order.
+   }
+   The following snippet shows the use of an RPO traversal in the Machine IR:
+   ReversePostOrderTraversal<MachineFunction *> RPOT(&MyMachineFunction);
+   For (MachineBasicBlock *MBB: RPOT) {
+   // Do something in topological order.
+   }
+  ```
+- 【作业】自己写一个RPO示例：逆后续遍历，就是后续遍历的反向；那什么是后续遍历，先返回子节点在访问根节点；
+  ```
+   // clang++ -std=c++14 -o printBBs printBBs.cpp $(llvm-config --cxxflags --ldflags --libs core irreader)
+   #include "llvm/IR/LLVMContext.h"
+   #include "llvm/IR/Module.h"
+   #include "llvm/IR/Function.h"
+   #include "llvm/IR/BasicBlock.h"
+   #include "llvm/IR/CFG.h"               // 提供 GraphTraits<Function*> 特化
+   #include "llvm/ADT/PostOrderIterator.h"
+   #include "llvm/Support/SourceMgr.h"
+   #include "llvm/Support/raw_ostream.h"
+   #include "llvm/IRReader/IRReader.h"
+   #include <memory>
+   
+   using namespace llvm;
+   
+   void printBasicBlocksInReversePostOrder(Function &F) {
+       // 使用 ReversePostOrderTraversal 对函数 F 的基本块进行逆后序遍历
+       ReversePostOrderTraversal<Function*> RPOT(&F);
+   
+       outs() << "Function: " << F.getName() << " (Reverse Post Order)\n";
+   
+       for (BasicBlock *BB : RPOT) {
+           if (BB->hasName()) {
+               outs() << "  " << BB->getName() << "\n";
+           } else {
+               outs() << "  BB@" << BB << "\n";
+           }
+           // 可选：打印基本块中的指令
+           for (Instruction &I : *BB) {
+                outs() << "    " << I << "\n";
+            }
+       }
+   }
+   
+   int main(int argc, char **argv) {
+       if (argc != 2) {
+           errs() << "Usage: " << argv[0] << " <IR file>\n";
+           return 1;
+       }
+   
+       LLVMContext Context;
+       SMDiagnostic Err;
+       std::unique_ptr<Module> MyModule = parseIRFile(argv[1], Err, Context);
+       if (!MyModule) {
+           Err.print(argv[0], errs());
+           return 1;
+       }
+   
+       for (Function &F : *MyModule) {
+           if (!F.isDeclaration()) {
+               printBasicBlocksInReversePostOrder(F);
+           }
+       }
+   
+       return 0;
+   }
+  ```
+- Backedge: a backedge is a control flow edge that goes backward. In other words, this is an edge that takes you back in the execution of your program; identifying backedges is important to identify loops.
+   ```
+   To put things together, identifying backedges is important to identify loops. Identifying loops is
+   important since loops are where most programs spend most of their runtime, hence, they are the
+   primary focus for compiler optimizations.
+   ```
+- Critical edge: At the IR level, you can check if an edge is critical using the isCriticalEdge function from the IR library.
 #### 附件
 - MachineFunction.h https://llvm.org/doxygen/MachineFunction_8h.html
 - MacheineFunction class: https://llvm.org/doxygen/classllvm_1_1MachineFunction.html
