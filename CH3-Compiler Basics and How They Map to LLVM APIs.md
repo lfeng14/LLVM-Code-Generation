@@ -67,8 +67,123 @@
    // Do something with MyMachineBB.
    }
   ```
+  ```
+   $ cat input.c
+   extern int baz();
+   extern void bar(int);
+   
+   void foo(int a, int b) {
+     int var = a + b;
+     if (var == 0xFF) {
+       bar(var);
+       var = baz();
+     }
+     bar(var);
+   }
+   
+   $ cat input.ll
+   ; ModuleID = 'input.c'
+   source_filename = "input.c"
+   target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+   target triple = "aarch64-unknown-linux-gnu"
+   
+   ; Function Attrs: noinline nounwind optnone uwtable
+   define dso_local void @foo(i32 noundef %0, i32 noundef %1) #0 {
+     %3 = alloca i32, align 4
+     %4 = alloca i32, align 4
+     %5 = alloca i32, align 4
+     store i32 %0, ptr %3, align 4
+     store i32 %1, ptr %4, align 4
+     %6 = load i32, ptr %3, align 4
+     %7 = load i32, ptr %4, align 4
+     %8 = add nsw i32 %6, %7
+     store i32 %8, ptr %5, align 4
+     %9 = load i32, ptr %5, align 4
+     %10 = icmp eq i32 %9, 255
+     br i1 %10, label %11, label %14
+   
+   11:                                               ; preds = %2
+     %12 = load i32, ptr %5, align 4
+     call void @bar(i32 noundef %12)
+     %13 = call i32 @baz()
+     store i32 %13, ptr %5, align 4
+     br label %14
+   
+   14:                                               ; preds = %11, %2
+     %15 = load i32, ptr %5, align 4
+     call void @bar(i32 noundef %15)
+     ret void
+   }
+   
+   $ llc -print-after-all -filter-print-funcs=foo input.ll -o -
+   	.text
+   	.file	"input.c"
+   	.globl	foo                             // -- Begin function foo
+   	.p2align	2
+   	.type	foo,@function
+   foo:                                    // @foo
+   	.cfi_startproc
+   // %bb.0:
+   	sub	sp, sp, #32
+   	.cfi_def_cfa_offset 32
+   	stp	x29, x30, [sp, #16]             // 16-byte Folded Spill
+   	add	x29, sp, #16
+   	.cfi_def_cfa w29, 16
+   	.cfi_offset w30, -8
+   	.cfi_offset w29, -16
+   	stur	w0, [x29, #-4]
+   	str	w1, [sp, #8]
+   	ldur	w8, [x29, #-4]
+   	ldr	w9, [sp, #8]
+   	add	w8, w8, w9
+   	str	w8, [sp, #4]
+   	ldr	w8, [sp, #4]
+   	cmp	w8, #255
+   	b.ne	.LBB0_2
+   // %bb.1:
+   	ldr	w0, [sp, #4]
+   	bl	bar
+   	bl	baz
+   	str	w0, [sp, #4]
+   .LBB0_2:
+   	ldr	w0, [sp, #4]
+   	bl	bar
+   	.cfi_def_cfa wsp, 32
+   	ldp	x29, x30, [sp, #16]             // 16-byte Folded Reload
+   	add	sp, sp, #32
+   	.cfi_def_cfa_offset 0
+   	.cfi_restore w30
+   	.cfi_restore w29
+   	ret
+   .Lfunc_end0:
+   	.size	foo, .Lfunc_end0-foo
+   	.cfi_endproc
+                                           // -- End function
+   	.ident	"Ubuntu clang version 18.1.3 (1ubuntu1)"
+   	.section	".note.GNU-stack","",@progbits
+  ```
+- basic block: （**注意这里是bb块内的单个路径只有一个入口一个出口,只能从块的最后一条指令离开**）A basic block is a single-entry single-exit (SESE) region of code where the entry point is at the beginning of the region and the exit point at the end.
+  ;basic blocks are formed such that they are maximal;
+  ```
+   This implies that when you
+   hit an instruction, by definition, all the instructions before this instruction within the same block have
+   been executed, and all the instructions remaining in this basic block will be executed.
+  ```
+  ```
+   1. 基本块（BasicBlock）中：
+      - 用 `BasicBlock::getFirstNonPHI()` 获取**首条非PHI指令**
+      - 用 `BasicBlock::getTerminator()` 获取**终结指令**
+   2. 对基本块做局部修改时，应遍历 **`getFirstNonPHI()` 到 `getTerminator()`** 之间的指令。
+  ```
+- There are a couple of differences compared to the BasicBlock class:
+  ```
+   • APIs: begin(), end(), and getParent()
+   • MachineBasicBlock instances can have zero or several terminator instructions.
+   • MachineBasicBlock instances offer a direct API to traverse their predecessors and successors through predXXX and succXXX methods. 
+  ```
+
 #### 附件
-- MachineFunction.h: https://llvm.org/doxygen/MachineFunction_8h.html
+- MachineFunction.h https://llvm.org/doxygen/MachineFunction_8h.html
 - MacheineFunction class: https://llvm.org/doxygen/classllvm_1_1MachineFunction.html
 - https://llvm.org/doxygen/MachineFunction_8h_source.html
   ```
@@ -79,4 +194,4 @@
    jeandle-llvm-install/include/llvm/CodeGen/MachineFunctionAnalysisManager.h
   ```
 - IRRead.h https://llvm.org/doxygen/llvm_2IRReader_2IRReader_8h.html
-- 
+- MachineBasicBlock https://llvm.org/doxygen/classllvm_1_1MachineBasicBlock.html
