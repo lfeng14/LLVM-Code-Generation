@@ -280,25 +280,22 @@
       允许操作物理寄存器：大多数 MachineIRBuilder 的指令构建方法（如 buildInstr、buildAdd 等）要求操作数是虚拟寄存器，因为机器指令通常遵循 SSA 形式，且虚拟寄存器便于优化和寄存器分配。但物理寄存器（如 ARM 的 w0、w1）是硬件固定的，不能随意重命名，直接在其他指令中使用会破坏 SSA 并引入副作用。
       专用于数据移动：buildCopy 本质是生成一条寄存器间的拷贝指令（如 COPY），它可以将值从物理寄存器拷贝到虚拟寄存器，或反之。这是唯一被允许直接操作物理寄存器的构建方法，因为拷贝操作不改变值，只是传输数据，且物理寄存器的使用在这里是明确且安全的。
       作为物理寄存器的唯一桥梁：通过 buildCopy，我们可以安全地与遵循调用约定的物理寄存器交互（例如获取函数参数、设置返回值），而不会干扰其他指令的 SSA 性质。
-     ```
-   - MachineIRBuilder class from the GlobalISel library.
-     ```
-   在 Machine IR（机器指令中间表示）中，基本块通常应遵循 SESE（Single Entry Single Exit，单入口单出口）原则，即每个基本块只有一个入口和一个出口（通常是一条终结指令）。然而，实际设计中允许某些基本块包含两条终结指令，例如：
-   
-   text
-   BB1:
-     G_BRCOND predicate, BB2   ; 条件分支，若条件成立则跳转到 BB2
-     G_BR BB3                   ; 无条件分支，否则跳转到 BB3
-   这里 BB1 有两个终结指令：条件分支和无条件分支，这直接违反了 SESE 约束，因为该块实际上有两个出口（分别到 BB2 和 BB3）。那么为什么 Machine IR 要容忍这种违反呢？原因在于内存空间的权衡。
-   
-   严格遵循 SESE 的话，需要将无条件分支单独分离出来，形成一个仅包含一条无条件分支的“fall-through”块，例如：
-   
-   text
-   BB1:
-     G_BRCOND predicate, BB2
-     ; 隐含的 fall-through 到 BB_fall
-   BB_fall:
-     G_BR BB3
+  ```
+- MachineIRBuilder class from the GlobalISel library.
+  ```
+      在 Machine IR（机器指令中间表示）中，基本块通常应遵循 SESE（Single Entry Single Exit，单入口单出口）原则，即每个基本块只有一个入口和一个出口（通常是一条终结指令）。然而，实际设计中允许某些基本块包含两条终结指令，例如：    
+      text
+      BB1:
+        G_BRCOND predicate, BB2   ; 条件分支，若条件成立则跳转到 BB2
+        G_BR BB3                   ; 无条件分支，否则跳转到 BB3
+      这里 BB1 有两个终结指令：条件分支和无条件分支，这直接违反了 SESE 约束，因为该块实际上有两个出口（分别到 BB2 和 BB3）。那么为什么 Machine IR 要容忍这种违反呢？原因在于内存空间的权衡。严格遵循 SESE 的话，需要将无条件分支单独分离出来，形成一个仅包含一条无条件分支的“fall-through”块，例如：
+      
+      text
+      BB1:
+        G_BRCOND predicate, BB2
+        ; 隐含的 fall-through 到 BB_fall
+      BB_fall:
+        G_BR BB3
   ```
 #### 附件
 - 示例：https://github.com/PacktPublishing/LLVM-Code-Generation/blob/main/ch3/llvm_ir/solution/populate_function.cpp
