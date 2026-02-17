@@ -24,6 +24,48 @@
   - At the LLVM IR level: bool Instruction::hasNoUnsignedWrap() and bool Instruction::hasNoSignedWrap()
   - At the Machine IR level: bool MachineInstr::getFlag(MIFlag Flag) with the MIFlag::NoUWrap and MIFlag::NoSWrap values
 - 内存别名与ssa是什么关系 ？
+- The body of a function can contain any kinds of instructions. This means calls to arbitrary functions must be conservatively modeled as having side effects. To avoid unnecessarily constraining optimizations, known functions, such as functions from the standard libraries。
+  ```
+  bool MemoryEffects::doesNotAccessMemory() tells you whether the memory is accessed at all.
+  the Function class exposes a getMemoryEffects() method that describes the memory effects
+  ```
+-  it would be the right thing to disable inlining to optimize for minimal code size. Indeed, at this point, the code takes more space. However, if you run a later dead code elimination pass, the code shrinks.
+-  The main API is InstructionCost TragetTransformInfo::getInstructionCost(const User *U, TargetCostKind CostKind).
+   ```
+   opt -passes="print<cost model>" -cost-kind=code-size input.ll
+  --cost-kind=<value>                                                        - Target cost kind
+    =throughput                                                              -   Reciprocal throughput
+    =latency                                                                 -   Instruction latency
+    =code-size                                                               -   Code size
+    =size-latency                                                            -   Code size and latency
+   ```
+- TargetLoweringInfo::isFunctionVectorizable 判断库函数（如 libm 中的 cosf）是否支持指定向量长度，能否并行处理多元素。
+- Datatype properties – DataLayout：TypeSize DataLayout::getTypeSizeInBits(Type *Ty)
+- Register pressure：The idea behind register pressure is to keep track of all resources that may reside in the register and make sure that this number does not exceed the number of physical registers.
+- BasicBlockFrequency: By default, the block frequencies are heuristically computed. For instance, a block before an if-then-else statement would have a frequency of 1, the then and else blocks a frequency of 0.5, and the block after the if-then-else-statement would have a frequency of 1. Profile-guided information means that you compile your program once with some instrumentations enabled. This instrumentation collects the frequencies of the basic blocks of your program while you run it on representative examples.
+This information can then be fed back to the compiler to improve the accuracy of the cost models/heuristics.
+- More precise instruction properties – scheduling model and instruction description:
+  ```
+  1. 代码编译**lowering 过程**中，越接近最终可执行代码，优化转换可利用的目标平台信息越多。
+  2. **Machine IR 及更低层级**可通过 `MCInstrDesc` 结构体获取指令底层信息：指令类型、代码大小、调度类 ID 等。
+  3. 可通过 `MachineInstr::getDesc()` 或 `TargetInstrInfo` 直接获取 `MCInstrDesc`。
+  4. 目标**调度模型**由 `MCSchedModel` 表示，包含指令延迟、吞吐量等信息，可从 `MachineFunction` 逐级获取。
+  5. 用指令的调度类 ID 可从模型中查到对应的 `MCSchedClassDesc` 详细信息。
+  6. 调度模型细节将在第15章展开，本节最后会介绍优化领域常用术语。
+  ```
+- Instcombine: taking a = b * 2 and rewriting it into a = b << 1 is a sort of instcombine.
+- Fixed point：A value is said to be alive at a given program point when its definition reaches this point, and use of
+that value is still reachable from this point.
+- Hoisting：The term hoisting refers to a transformation that moves something up in the CFG. For instance, if you pull up an invariant outside of a loop, you are hoisting this invariant outside of the loop.
+- Sinking：The term sinking refers to the opposite transformation of hoisting
+- Loop：LLVM offers loop-related information through the derived classes of the LoopBase class. LoopBase::getLoopPreheader()), the loop header (LoopBase::getHeader()
+- constant propagation: simplify computations by replacing variables with constants and combining the constants to produce fewer computations
+  - Only integer types are constant propagated.
+  - Constant propagation is always legal and profitable.
+  - We give up on constants when the constant type changes; for instance, zero extension (for example, unsigned a = -3; long long b = a;).
+- Constant class派生类 ConstantInt；Value::replaceAllUsesWith(Value *NewVal).
+- LLVM explicitly disabled all RTTI support. Instead, it has its own RTTI support that essentially assigns an embedded unique identifier to each class and uses this identifier to statically (that is, without RTTI support) check if an instance is of a certain type. What you need to remember is that you will need to use LLVM’s rolled-out RTTI constructs (isa<typename>(Obj), cast<typename>(Obj), and dyn_cast<typename>(Obj)
 #### 附件
 - 论文：Simple and Efficient Construction of Static Single Assignment Form by Braun et al. published in Compiler Construction in 2013
 - value class：https://llvm.org/doxygen/classllvm_1_1Value.html
+- Loop：https://llvm.org/docs/LoopTerminology.html
