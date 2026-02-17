@@ -1,3 +1,4 @@
+- 优化考虑两个点：legality and profitability. 合法性和收益
 - value: A value is an entity that bears a certain meaning at a given time.
 - SSA: is a way to represent values directly in an IR. The idea is straightforward: rename all variables such that each variable holds exactly one value statically. In the LLVM IR and Machine IR levels, phi instructions are grouped together at the beginning of the basic blocks. It is invalid to insert non-phi instructions before phi instructions.
 
@@ -65,7 +66,41 @@ that value is still reachable from this point.
   - We give up on constants when the constant type changes; for instance, zero extension (for example, unsigned a = -3; long long b = a;).
 - Constant class派生类 ConstantInt；Value::replaceAllUsesWith(Value *NewVal).
 - LLVM explicitly disabled all RTTI support. Instead, it has its own RTTI support that essentially assigns an embedded unique identifier to each class and uses this identifier to statically (that is, without RTTI support) check if an instance is of a certain type. What you need to remember is that you will need to use LLVM’s rolled-out RTTI constructs (isa<typename>(Obj), cast<typename>(Obj), and dyn_cast<typename>(Obj)
+- 常量传播也存在增加开销的情况：
+  ```
+  cst = load <low_part(262144)>   // 指令1
+  cst |= load <high_part(262144)> // 指令2
+  a = cst + b                      // 指令3
+  c = cst + 3                      // 指令4
+  e = c + d                        // 指令5
+  这里常量 cst 只被构建了一次，然后被重复使用。
+  如果进行常量传播，将 cst 替换到所有使用处：
+  text
+  cst = load <low_part(262144)>
+  cst |= load <high_part(262144)>
+  a = cst + b
+  c = load <low_part(262144 + 3)>   // 新构建 (262144+3)
+  c |= load <high_part(262144 + 3)>
+  e = c + d
+  ```
+- ConstantHoisting.cpp 核心总结：
+  - 筛选出无法折叠到指令中、构造开销超过TCC_BASIC阈值的整数常量及相关表达式；
+  - 将分散在多个基本块的相似常量合并，通过 “基常量 + 偏移” 的形式统一构造；
+  - 把基常量提升到支配所有使用点的位置，避免 SelectionDAG 中重复生成常量；
+  - 隐藏提升后的常量，防止被后续转换生成新的高开销常量。
+
+- What is the difference between a Use object and a User object in LLVM ?
+  ```
+  A Use object represents the relationship between a definition and an operand of one of its users;
+  that is the entity that uses that value. A user is represented with an instance of the User class.
+  Put differently, a Use object represents the edge between a definition and a User object, and a
+  definition can have several Use instances for one User object. For example, a = b + b: b has
+  one user (the computation that produces a) and two uses (the first and second operands of the
+  computation that produces a).
+  ```
 #### 附件
 - 论文：Simple and Efficient Construction of Static Single Assignment Form by Braun et al. published in Compiler Construction in 2013
 - value class：https://llvm.org/doxygen/classllvm_1_1Value.html
 - Loop：https://llvm.org/docs/LoopTerminology.html
+- 常量上提： llvm/lib/Transforms/Scalar/
+ConstantHoisting.cpp
