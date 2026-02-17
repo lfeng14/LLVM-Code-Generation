@@ -102,5 +102,4 @@ that value is still reachable from this point.
 - 论文：Simple and Efficient Construction of Static Single Assignment Form by Braun et al. published in Compiler Construction in 2013
 - value class：https://llvm.org/doxygen/classllvm_1_1Value.html
 - Loop：https://llvm.org/docs/LoopTerminology.html
-- 常量上提： llvm/lib/Transforms/Scalar/
-ConstantHoisting.cpp
+- 常量上提： llvm/lib/Transforms/Scalar/ConstantHoisting.cpp
