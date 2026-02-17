@@ -11,6 +11,9 @@
   ```
 - legality: al? In other words, does this optimization preserve the semantics of the program
 - 在数学上，加法满足结合律 (3.0 + a) + 3.0 = a + (3.0 + 6.0)。但在计算机的浮点数运算中，情况完全不同：运算顺序影响结果：浮点数的表示是有限的（如IEEE 754标准），很多小数无法精确表示。中间结果会经历舍入。表达式 (3.0 + a) + 3.0 的运算顺序是确定的：先计算 3.0 + a 得到一个中间结果并舍入，再将这个中间结果与 3.0 相加并再次舍入。
+  - `3.0 + a + 3.0` 可变换为 `a + 6.0`。
+  - 该变换有效前提：相关指令带有 **reassoc 标志**（reassociation 的缩写）。
+  - 作用：允许对数学表达式**重新结合运算顺序**，不考虑结果精度可能受影响。
 - No Unsigned Wrap (NUW) and No Signed Wrap (NSW) flags：结果回绕；
   1. 优化思路：将 `x * 2 == 2` 简化为 `x == 1`（两边同除以2）。
   2. 合法前提：`x * 2` 必须带有 **NSW 标记**（无符号溢出）。
@@ -18,6 +21,8 @@
      - 当 `x > INT_MAX / 2`，`x * 2` 会发生溢出环绕。
      - 存在反例：`x = 0x80000001`，满足 `(x * 2) mod 2³² == 2`，但 `x mod 2³² ≠ 1`。
   4. 结论：无 NSW 时该优化会导致结果错误。
+  - At the LLVM IR level: bool Instruction::hasNoUnsignedWrap() and bool Instruction::hasNoSignedWrap()
+  - At the Machine IR level: bool MachineInstr::getFlag(MIFlag Flag) with the MIFlag::NoUWrap and MIFlag::NoSWrap values
 - 内存别名与ssa是什么关系 ？
 #### 附件
 - 论文：Simple and Efficient Construction of Static Single Assignment Form by Braun et al. published in Compiler Construction in 2013
