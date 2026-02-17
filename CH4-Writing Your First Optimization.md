@@ -34,7 +34,7 @@
 -  The main API is InstructionCost TragetTransformInfo::getInstructionCost(const User *U, TargetCostKind CostKind).
    ```
    opt -passes="print<cost model>" -cost-kind=code-size input.ll
-  --cost-kind=<value>                                                        - Target cost kind
+   --cost-kind=<value>                                                        - Target cost kind
     =throughput                                                              -   Reciprocal throughput
     =latency                                                                 -   Instruction latency
     =code-size                                                               -   Code size
