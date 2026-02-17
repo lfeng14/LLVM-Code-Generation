@@ -1,4 +1,4 @@
-- value:
+- value: A value is an entity that bears a certain meaning at a given time.
 - SSA: is a way to represent values directly in an IR. The idea is straightforward: rename all variables such that each variable holds exactly one value statically. In the LLVM IR and Machine IR levels, phi instructions are grouped together at the beginning of the basic blocks. It is invalid to insert non-phi instructions before phi instructions.
 
 - 节点A 支配 节点B：从程序入口到B的所有路径都必须经过A。这意味着在A处执行的代码，在到达B之前一定会被执行。
