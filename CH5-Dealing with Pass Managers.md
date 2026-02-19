@@ -17,10 +17,25 @@
 - legacy pass manager:
   - 生命周期方法：对于 FunctionPass，runOnFunction 和 releaseMemory 会为模块中的每个函数成对调用；而 doInitialization 和 doFinalization 则在整个模块处理前后各调用一次，且不同 Pass 的这些调用可以嵌套（如 PassB 的初始化和收尾在 PassA 的内部执行）。
   - 可选分析访问：getAnalysisIfAvailable<AnalysisType>() 允许在不声明强制依赖的情况下获取分析结果，若分析不可用则返回 nullptr，使 Pass 在缺少信息时仍能运行（只是优化效果可能降低），适用于锦上添花的场景。
- 
+- 
+  ```
+  For instcombine, its implementation lives in the Transforms library, and its APIs are the following:
+    createInstructionCombiningPass for the legacy pass manager
+    InstCombinePass for the new pass manager
+  Finally, the alwaysinline pass is available from the IPO library with the following:
+    createAlwaysInlinerLegacyPass for the legacy pass manager
+    AlwaysInlinerPass for the new pass manager
+  ```
 
+- 
+  ```
+  be careful with the order in which you create your XXXAnalysisManager instances. They need to be created from the narrower to the broader scope.](https://llvm.
+  org/docs/NewPassManager.html#just-tell-me-how-to-run-the-default-optimization-pipeline-
+  with-the-new-pass-manager.
+  ```
 #### further reading
 - Using the New Pass Manager：https://llvm.org/docs/NewPassManager.html#implementing-analysis-invalidation
 - Explanation of how to write a pass with the new pass manager: https://llvm.org/docs/WritingAnLLVMNewPMPass.html
 - Explanation of how to write a pass with the legacy pass manager: https://llvm.org/docs/WritingAnLLVMPass.html
 - Explanation of how the new pass manager works: https://llvm.org/docs/NewPassManager.html
+- https://llvm.org/docs/NewPassManager.html#just-tell-me-how-to-run-the-default-optimization-pipeline-with-the-new-pass-manager
