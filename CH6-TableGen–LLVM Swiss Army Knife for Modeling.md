@@ -66,5 +66,33 @@
   llvm/unittests/Target/AArch64/AArch64RegisterInfoTest.cpp
   llvm/unittests/Target/AArch64/AArch64SVESchedPseudoTest.cpp
   ```
+
+  ```
+  mkdir build && cd build
+  cmake -DCMAKE_PREFIX_PATH=/usr  ../
+  make VERBOSE=1
+  /usr/bin/cmake -S/home/franz/src/LLVM-Code-Generation/ch6 -B/home/franz/src/LLVM-Code-Generation/ch6/build --check-build-system CMakeFiles/Makefile.cmake 0
+  /usr/bin/cmake -E cmake_progress_start /home/franz/src/LLVM-Code-Generation/ch6/build/CMakeFiles /home/franz/src/LLVM-Code-Generation/ch6/build//CMakeFiles/progress.marks
+  make  -f CMakeFiles/Makefile2 all
+  make[1]: Entering directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  make  -f CMakeFiles/CommonTableGen.dir/build.make CMakeFiles/CommonTableGen.dir/depend
+  make[2]: Entering directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  cd /home/franz/src/LLVM-Code-Generation/ch6/build && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/franz/src/LLVM-Code-Generation/ch6 /home/franz/src/LLVM-Code-Generation/ch6 /home/franz/src/LLVM-Code-Generation/ch6/build /home/franz/src/LLVM-Code-Generation/ch6/build /home/franz/src/LLVM-Code-Generation/ch6/build/CMakeFiles/CommonTableGen.dir/DependInfo.cmake "--color="
+  make[2]: Leaving directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  make  -f CMakeFiles/CommonTableGen.dir/build.make CMakeFiles/CommonTableGen.dir/build
+  make[2]: Entering directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  [ 25%] Building GlobalISel.inc...
+  /usr/lib/llvm-18/bin/llvm-tblgen -gen-global-isel -I /home/franz/src/LLVM-Code-Generation/ch6 -I/usr/lib/llvm-18/include /home/franz/src/LLVM-Code-Generation/ch6/my-first-gisel.td --write-if-changed -o /home/franz/src/LLVM-Code-Generation/ch6/build/GlobalISel.inc
+  [ 50%] Building person.inc...
+  /usr/lib/llvm-18/bin/llvm-tblgen -print-records -I /home/franz/src/LLVM-Code-Generation/ch6 -I/usr/lib/llvm-18/include /home/franz/src/LLVM-Code-Generation/ch6/person.td --write-if-changed -o /home/franz/src/LLVM-Code-Generation/ch6/build/person.inc
+  [ 75%] Building multiclass.inc...
+  /usr/lib/llvm-18/bin/llvm-tblgen -print-records -I /home/franz/src/LLVM-Code-Generation/ch6 -I/usr/lib/llvm-18/include /home/franz/src/LLVM-Code-Generation/ch6/multiclass.td --write-if-changed -o /home/franz/src/LLVM-Code-Generation/ch6/build/multiclass.inc
+  [100%] Building multiclass-with-def-type.inc...
+  /usr/lib/llvm-18/bin/llvm-tblgen -print-records -I /home/franz/src/LLVM-Code-Generation/ch6 -I/usr/lib/llvm-18/include /home/franz/src/LLVM-Code-Generation/ch6/multiclass-with-def-type.td --write-if-changed -o /home/franz/src/LLVM-Code-Generation/ch6/build/multiclass-with-def-type.inc
+  make[2]: Leaving directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  [100%] Built target CommonTableGen
+  make[1]: Leaving directory '/home/franz/src/LLVM-Code-Generation/ch6/build'
+  /usr/bin/cmake -E cmake_progress_start /home/franz/src/LLVM-Code-Generation/ch6/build/CMakeFiles 0
+  ```
 #### 附件
 - https://llvm.org/docs/TableGen/ProgRef.html#bang-operators.
