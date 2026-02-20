@@ -96,3 +96,5 @@
   ```
 #### 附件
 - https://llvm.org/docs/TableGen/ProgRef.html#bang-operators.
+- https://github.com/llvm/llvm-project/blob/main/llvm/include/llvm/IR/Intrinsics.td
+- https://llvm.org/docs/TableGen/
