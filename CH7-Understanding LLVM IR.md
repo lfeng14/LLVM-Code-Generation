@@ -30,6 +30,30 @@
   ```
 - There are two main aggregate types:
   - The structure type is a collection of fields of different types
+    - {i32, {ptr, half}, {i32, i1, i1}}；获取half成员 %addr_half_field = getelementptr inbounds %my.type, ptr %dst, i64 0, i32 1, i32 1
   - The array type is a statically sized collection of elements of the same type
+
+- All the LLVM IR types derive from the Type class：IntegerType, FunctionType, StructType, VectorType, PointerType,
+  ```
+  bool isVectorOfIntV2(Instruction &Add) {
+  Type *Ty = Add.getType();
+  return Ty->isVectorTy() &&
+  Ty->getScalarType()->isIntegerTy();
+  }
+  ```
+- intrinsic 区分：generic or target-specific,
+  1. 判断LLVM中`CallInst`（`CallBase`子类）是否为内部函数调用，需先获取调用目标。
+  2. 通过`CallBase::getCalledFunction()`获取被调用函数。
+  3. 两种方式判断是否为通用内部函数：
+     - 直接用`Function::isIntrinsic()`；
+     - 用`Function::getIntrinsicID()`，判断结果非`Intrinsic::not_intrinsic`。
+  4. 两种方式判断是否为目标相关内部函数：
+     - 直接用`Function::isTargetIntrinsic()`；
+     - 仅持有`Intrinsic::ID`时，使用静态方法`Function::isTargetIntrinsic(Intrinsic::ID)`。
+- triple
+  - The target architecture, for instance, x86_64 or aarch64
+  - The vendor, for instance, Apple or Nvidia
+  - The OS, for instance, macOS or iOS
 #### 附件
 - https://llvm.org/docs/LangRef.html#parameter-attributes
+- type类：https://llvm.org/doxygen/classllvm_1_1Type.html
