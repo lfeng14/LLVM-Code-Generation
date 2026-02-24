@@ -15,6 +15,31 @@
   教授 LLVM Pass 的调试方法
   学完可掌握 LLVM IR 与 Pass 操作、调试能力，为后续后端（Machine IR）学习奠定基础，对应第 7–10 章内容。
   ```
+- type: single type/label type/aggregate type
+  <img width="1126" height="1388" alt="image" src="https://github.com/user-attachments/assets/148f1b59-7e45-46f0-b51a-0b6cb411da32" />
+  ```
+  define i32 @foo(i32, i32, i32 %arg) {
+    entry:
+      %myid = add i32 %0, %1
+      %31 = mul i32 %myid, 2
+      %45 = shl i32 %31, 5
+      %"00~random~00" = udiv i32 %45, %arg
+      br label %46  # %46 label type在哪里，指下一行
+    
+      br label %47
+    47:
+     ret i32 %"00~random~00"
+  }
+  ```
+- 没有entry label，则隐式命令为%2，所以下面的IR：
+  - 第一种改法为 后续从%3开始；
+  - 第二种改法为 显式命令为bb
+  ```
+  define i32 @add(i32 %0, i32 %1) {
+    %2 = add i32 %0, %1
+    ret i32 %2
+  }
+  ```
 - The content of a basic block is a list of instructions with a mandatory terminator instruction at the end.
 - All instructions map to the same base class called Instruction; A lot of the instructions then use their own derived class; for instance, the br instruction is implemented by the BranchInst class, and the phi instruction is implemented by the PHINode class.
 - 找到对应**C++类**通常比较简单。文本IR中的操作码（opcode）与同名C++类**基本一一对应**。举例：`bitcast` 对应 `BitCastInst`，`int_to_ptr` 对应 `IntToPtrInst`。
@@ -60,9 +85,47 @@
   target triple = "aarch64-unknown-linux-gnu"
   ```
 - IR分两个格式，文本格式、位码格式。文本格式如果是旧版本编译器生成，可以通过先转为位码格式，然后喂给新版本编译器。bitcodereader class from bitreader library(bitcode reader)；autoupgrade 的命令，它已经融入到 LLVM 工具链的血液中了。只需用最新版的工具处理旧文件即可
+
+- GetElementPtr
+  ```
+  GEP 只算地址，不碰内存。
+  第二个操作数是必须存在的指针，且后面必须跟索引。
+  索引个数必须与类型结构严格匹配，不能多余。
+  末尾的零索引不影响地址，但影响类型；开头的零索引同时影响地址语义（剥离顶层）和类型，因此都不能省略。
+  ```
+- Are vector types aggregate types?
+   ```
+    No, they are not.
+    Vector types are single-value types because of the following:
+    They cannot use non-single value types as element types
+    They usually map to simple low-level constructs such as a plain register used in a SIMD
+    instruction
+    See the Single-value types section for more details.
+   ```
+- 怎么去除隐式变量：
+  ```
+  cat > input.ll
+  define i32 @add(i32 %0, i32 %1) {
+  bb:
+  %2 = add i32 %0, %1
+  ret i32 %2
+  }
+  $ 
+  $ opt --passes=instnamer -S input.ll -o -
+  ; ModuleID = 'input.ll'
+  source_filename = "input.ll"
+  
+  define i32 @add(i32 %arg, i32 %arg1) {
+  bb:
+    %i = add i32 %arg, %arg1
+    ret i32 %i
+  }
+  ```
 #### 附件
 - https://llvm.org/docs/LangRef.html#parameter-attributes
 - type类：https://llvm.org/doxygen/classllvm_1_1Type.html
 - datalayout：https://llvm.org/docs/LangRef.html#data-layout
 - vector-type：https://llvm.org/docs/LangRef.html#vector-type
 - https://llvm.org/doxygen/BitcodeReader_8h_source.html
+- GetElementPtr：https://llvm.org/docs/GetElementPtr.html
+- https://llvm.org/devmtg/2020-09/slides/Lee-UndefPoison.pdf
