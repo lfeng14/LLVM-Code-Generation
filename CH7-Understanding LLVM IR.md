@@ -54,9 +54,15 @@
   - The target architecture, for instance, x86_64 or aarch64
   - The vendor, for instance, Apple or Nvidia
   - The OS, for instance, macOS or iOS
-- data layout是triple的体现，可以这么说两者是一体的：影响对齐 todo
+- data layout是triple的体现，可以这么说两者是一体的：影响对齐 todo；
+  ```
+  target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+  target triple = "aarch64-unknown-linux-gnu"
+  ```
+- IR分两个格式，文本格式、位码格式。文本格式如果是旧版本编译器生成，可以通过先转为位码格式，然后喂给新版本编译器。bitcodereader class from bitreader library(bitcode reader)；autoupgrade 的命令，它已经融入到 LLVM 工具链的血液中了。只需用最新版的工具处理旧文件即可
 #### 附件
 - https://llvm.org/docs/LangRef.html#parameter-attributes
 - type类：https://llvm.org/doxygen/classllvm_1_1Type.html
 - datalayout：https://llvm.org/docs/LangRef.html#data-layout
 - vector-type：https://llvm.org/docs/LangRef.html#vector-type
+- https://llvm.org/doxygen/BitcodeReader_8h_source.html
