@@ -41,7 +41,7 @@
   Ty->getScalarType()->isIntegerTy();
   }
   ```
-- intrinsic 区分：generic or target-specific,
+- intrinsic 区分：generic intrinsic(llvm.vector.reduce.add.xxx); target-specific(isTargetIntrinsic: llvm.aarch64.ldxr)
   1. 判断LLVM中`CallInst`（`CallBase`子类）是否为内部函数调用，需先获取调用目标。
   2. 通过`CallBase::getCalledFunction()`获取被调用函数。
   3. 两种方式判断是否为通用内部函数：
@@ -54,6 +54,9 @@
   - The target architecture, for instance, x86_64 or aarch64
   - The vendor, for instance, Apple or Nvidia
   - The OS, for instance, macOS or iOS
+- data layout是triple的体现，可以这么说两者是一体的：影响对齐 todo
 #### 附件
 - https://llvm.org/docs/LangRef.html#parameter-attributes
 - type类：https://llvm.org/doxygen/classllvm_1_1Type.html
+- datalayout：https://llvm.org/docs/LangRef.html#data-layout
+- vector-type：https://llvm.org/docs/LangRef.html#vector-type
