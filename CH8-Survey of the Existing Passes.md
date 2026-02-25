@@ -507,7 +507,7 @@
     ret i32 0
   }
   ```
-- domtree
+- Domtree：This analysis is part of the IR library and not the Analysis library because it is deeply connected with the SSA properties
   ```
   $ opt --passes=dot-cfg input.ll -disable-output
   $ dot -Tpng .main.dot -o cfg.png
@@ -527,4 +527,4 @@
         [3] %10 {4294967295,4294967295} [2]
   Roots: %0 
   ```
-  <img width="884" height="1326" alt="image" src="https://github.com/user-attachments/assets/40713100-1dfe-4bba-9cff-c8377ec837c8" />
+  <img width="442" height="663" alt="image" src="https://github.com/user-attachments/assets/40713100-1dfe-4bba-9cff-c8377ec837c8" />
