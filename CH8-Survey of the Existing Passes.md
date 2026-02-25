@@ -427,4 +427,104 @@
   ```
   git grep -l 'RUN: .*always-inline' llvm/test
   ```
+- In this section, you will find out how to do the following:
+  - Determine whether a pass is part of the middle end
+  - Get a brief description of all the passes
+  - Find the implementation of the passes
+  - Get some more information on what a pass does
+  - Find the unit tests of a pass and play with the input IR to refine your understanding of what a pass does
+- verify: opt --passes=verify input.ll -o input2.ll
+- Printer pass 再每个pass 前后执行
+  ```
+  -print-before-all/-print-after-all: Print the IR before/after each pass.
+  -print-before/-print-after=passname: Print the IR before/after the pass named passname,
+  as identified by the name used in the registration process in the related pass manager (see Chapter 5).
+  ```
+- 旧版 Pass 管理器对外的非分析类 Pass，多在匿名命名空间实现，无法直接用构造函数实例化。需通过对应 createXXXPass 函数创建，XXX 为旧版 Pass 名称。
+- Doing this translates into the following snippet for the legacy pass manager:
+  ```
+  TargetTransformInfo &TTI = getAnalysis<TargetTransformInfoWrapperPass>().getTTI(F);
+  ```
+  In this snippet, the call to getAnalysis happens from your pass (which must inherit one of the derived Pass classes) and F is an instance of the Function class. Similarly, with the new pass manager, this translates into the following snippet:
+  ```
+  TargetTransformInfo &TTI = FAM.getResult<TargetIRAnalysis>(F);
+  # we get the result of the TargetIRAnalysis pass from an instance of the FunctionAnalysisManager class, called FAM
+  ```
 
+- 别名分析
+  ```
+  程序采用两种别名分析：一种基于指向值类型（严格别名规则，浮点与整型指针不互斥），另一种基于范围分析（保守估算指针可访问内存大小）。
+  类型分析开销更低，若能判断指针是否重叠，就不启用范围分析。
+  ```
+- basic block frequency
+  ```
+  opt -passes='print<block-freq>' input.ll
+  WARNING: You're attempting to print out a bitcode file.
+  This is inadvisable as it may cause display problems. If
+  you REALLY want to taste LLVM bitcode first-hand, you
+  can force output with the `-f' option.
+  
+  Printing analysis results of BFI for function 'main':
+  block-frequency-info: main
+   - : float = 1.0, int = 562949953421312
+   - : float = 32.0, int = 18014398509481984
+   - : float = 31.0, int = 17451448556060672
+   - : float = 31.0, int = 17451448556060672
+   - : float = 1.0, int = 562949953421312
+  
+  $ cat test.c
+  int main() {
+    for (int i = 0; i < 100; i++) {
+      ;
+    }
+    return 0;
+  }
+  $ cat input.ll
+  ; ModuleID = 'test.c'
+  source_filename = "test.c"
+  target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+  target triple = "aarch64-unknown-linux-gnu"
+  
+  ; Function Attrs: noinline nounwind optnone uwtable
+  define dso_local i32 @main() #0 {
+    %1 = alloca i32, align 4
+    %2 = alloca i32, align 4
+    store i32 0, ptr %1, align 4
+    store i32 0, ptr %2, align 4
+    br label %3
+  3:                                                ; preds = %7, %0
+    %4 = load i32, ptr %2, align 4
+    %5 = icmp slt i32 %4, 100
+    br i1 %5, label %6, label %10
+  6:                                                ; preds = %3
+    br label %7
+  7:                                                ; preds = %6
+    %8 = load i32, ptr %2, align 4
+    %9 = add nsw i32 %8, 1
+    store i32 %9, ptr %2, align 4
+    br label %3, !llvm.loop !6
+  10:                                               ; preds = %3
+    ret i32 0
+  }
+  ```
+- domtree
+  ```
+  $ opt --passes=dot-cfg input.ll -disable-output
+  $ dot -Tpng .main.dot -o cfg.png
+  $ opt -passes='print<domtree>' input.ll
+  WARNING: You're attempting to print out a bitcode file.
+  This is inadvisable as it may cause display problems. If
+  you REALLY want to taste LLVM bitcode first-hand, you
+  can force output with the `-f' option.
+  
+  DominatorTree for function: main
+  =============================--------------------------------
+  Inorder Dominator Tree: DFSNumbers invalid: 0 slow queries.
+    [1] %0 {4294967295,4294967295} [0]
+      [2] %3 {4294967295,4294967295} [1]
+        [3] %6 {4294967295,4294967295} [2]
+          [4] %7 {4294967295,4294967295} [3]
+        [3] %10 {4294967295,4294967295} [2]
+  Roots: %0 
+  ```
+  <img width="884" height="1326" alt="image" src="https://github.com/user-attachments/assets/40713100-1dfe-4bba-9cff-c8377ec837c8" />
