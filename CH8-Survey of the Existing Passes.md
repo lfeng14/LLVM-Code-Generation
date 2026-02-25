@@ -1,12 +1,9 @@
 - Let us get started with how you even begin this journey of finding what the middle end has to offer.
-- Now, using the description of this pass, you can find where it is implemented by running from your LLVM source directory something such as the following:
+- using the description of this pass, you can find where it is implemented by running from your LLVM source directory something such as the following:
   ```
   git grep "the short description of the pass" llvm
   ```
-- At this point, you need to use a second command to check which passes are indeed supported by the
-new pass manager: 
-$ ${LLVM_INSTALL_DIR}/bin/opt --print-passes
-This command prints the names of all the passes that the new pass manager supports. For instance
+- At this point, you need to use a second command to check which passes are indeed supported by the new pass manager. This command prints the names of all the passes that the new pass manager supports. For instance
   ```
   opt --print-passes
   Module passes:
@@ -412,40 +409,22 @@ This command prints the names of all the passes that the new pass manager suppor
     pass-instrumentation
   ```
 
-- The developer tool named opt acts as a driver for all the LLVM-IR-to-LLVM-IR passes. As such, it covers
-everything that exists in the middle end. Therefore, to get an overview of everything that is available
-there, you can simply leverage the help message offered by this tool. But there is a caveat.
-This tool allows you to use both the legacy pass manager and the new one. Therefore, the default help
-message (available through the --help option) covers both managers indiscriminately. In other words,
-what is printed may go beyond the middle end since the legacy pass manager also drives the backends
-
-Therefore, the default help message (available through the --help option) covers both managers indiscriminately. This command describes how to use the opt tool and lists all the passes you can run, but it does not
-tell you which one runs with each pass manager
+- The developer tool named opt acts as a driver for all the LLVM-IR-to-LLVM-IR passes. As such, it covers everything that exists in the middle end. Therefore, to get an overview of everything that is available there, you can simply leverage the help message offered by this tool. But there is a caveat. This tool allows you to use both the legacy pass manager and the new one. Therefore, the default help message (available through the --help option) covers both managers indiscriminately. In other words, what is printed may go beyond the middle end since the legacy pass manager also drives the backends
+- Therefore, the default help message (available through the --help option) covers both managers indiscriminately. This command describes how to use the opt tool and lists all the passes you can run, but it does not tell you which one runs with each pass manager
 
 - These subdirectories, as identified by the name after each bullet point, contain, respectively:
-• AggressiveInstCombine: A more aggressive version of instcombiner; see the InstCombine
-point that follows.
-• Coroutines: Transformations around the lowering of coroutines. A coroutine is a function
-that can be resumed or suspended without locking the current thread. The lowering is usually
-highly specific to a source language.
-• HipStdPar: Transformations to enable the HIP C++ standard parallelism support.
-• IPO: Interprocedural optimizations, or IPOs, are transformations that apply across procedures,
-for instance, inlining, which takes the IR of the callee function and puts it in the IR of its caller.
-• InstCombine: Transformations that apply simple rewrite patterns that are beneficial for all
-targets.
-Instrumentation: Transformations used for instrumentation purposes. These transformations
-add constructs to the IR to maintain specific data structures next to the original IR. These are
-used to collect information for performance purposes, such as program-guided optimization
-(PGO), or for debugging purposes, like what a sanitizer would need to diagnost use-after-free
-issues or undefined behaviors.
-• Scalar: Transformations that are non-vector-related. This includes many different optimizations,
-of which the loop optimizations are unrelated to vectorization (see the Vectorize bullet point
-below).
-• Utils: Generally useful passes or helper functions used to transform the LLVM IR.
-• Vectorize: Transformations that produce vectorized code, meaning code that follows a singleinstruction multiple-data (SIMD) model. In other words, passes contained in this directory
-produce LLVM IR instructions that use vector types.
+  - AggressiveInstCombine: A more aggressive version of instcombiner; see the InstCombine point that follows.
+  - Coroutines: Transformations around the lowering of coroutines. A coroutine is a function that can be resumed or suspended without locking the current thread. The lowering is usually highly specific to a source language.
+  - HipStdPar: Transformations to enable the HIP C++ standard parallelism support.
+  - IPO: Interprocedural optimizations, or IPOs, are transformations that apply across procedures, for instance, inlining, which takes the IR of the callee function and puts it in the IR of its caller.
+  - InstCombine: Transformations that apply simple rewrite patterns that are beneficial for all targets. Instrumentation: Transformations used for instrumentation purposes. These transformations add constructs to the IR to maintain specific data structures next to the original IR. These are used to collect information for performance purposes, such as program-guided optimization (PGO), or for debugging purposes, like what a sanitizer would need to diagnost use-after-free issues or undefined behaviors.
+  - Scalar: Transformations that are non-vector-related. This includes many different optimizations, of which the loop optimizations are unrelated to vectorization (see the Vectorize bullet point below).
+  - Utils: Generally useful passes or helper functions used to transform the LLVM IR.
+  - Vectorize: Transformations that produce vectorized code, meaning code that follows a singleinstruction multiple-data (SIMD) model. In other words, passes contained in this directory produce LLVM IR instructions that use vector types.
 
 
-- git grep -l 'RUN: .*always-inline' llvm/test
-Using the list of files returned by this command, you can invoke lit to re-run a specific test or subset
-of the tests and see the pass in action by looking at the input IR and the output IR
+- Using the list of files returned by this command, you can invoke lit to re-run a specific test or subset of the tests and see the pass in action by looking at the input IR and the output IR
+  ```
+  git grep -l 'RUN: .*always-inline' llvm/test
+  ```
+
