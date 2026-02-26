@@ -448,8 +448,8 @@
   In this snippet, the call to getAnalysis happens from your pass (which must inherit one of the derived Pass classes) and F is an instance of the Function class. Similarly, with the new pass manager, this translates into the following snippet:
   ```
   TargetTransformInfo &TTI = FAM.getResult<TargetIRAnalysis>(F);
-  # we get the result of the TargetIRAnalysis pass from an instance of the FunctionAnalysisManager class, called FAM
   ```
+  we get the result of the TargetIRAnalysis pass from an instance of the FunctionAnalysisManager class, called FAM
 
 - 别名分析
   ```
