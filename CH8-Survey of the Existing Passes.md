@@ -528,3 +528,20 @@
   Roots: %0 
   ```
   <img width="442" height="663" alt="image" src="https://github.com/user-attachments/assets/40713100-1dfe-4bba-9cff-c8377ec837c8" />
+- value tracking
+  ```
+  /// Determine which bits of V are known to be either zero or one and return
+  /// them in the KnownZero/KnownOne bit sets.
+  ///
+  /// This function is defined on values with integer type, values with pointer
+  /// type, and vectors of integers.  In the case
+  /// where V is a vector, the known zero and known one values are the
+  /// same width as the vector element, and the bit is set only if it is true
+  /// for all of the elements in the vector.
+  LLVM_ABI void computeKnownBits(const Value *V, KnownBits &Known,
+                                 const DataLayout &DL,
+                                 AssumptionCache *AC = nullptr,
+                                 const Instruction *CxtI = nullptr,
+                                 const DominatorTree *DT = nullptr,
+                                 bool UseInstrInfo = true, unsigned Depth = 0);
+  ```
