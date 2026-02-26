@@ -545,3 +545,127 @@
                                  const DominatorTree *DT = nullptr,
                                  bool UseInstrInfo = true, unsigned Depth = 0);
   ```
+
+- instcombine pass优化后，指令数增加，但是为后续优化：https://llvm.org/doxygen/InstCombineAddSub_8cpp_source.html
+  ```
+  For instance, consider the following input IR from that file:
+  %b = load i64, ptr %x
+  %c = inttoptr i64 %b to ptr
+  This snippet loads a 64-bit value and casts it to a pointer type. Since the target only supports 32-bit
+  pointers, this means this conversion implicitly truncates the 64-bit value to 32-bit.
+  When running instcombine on this example, the truncate is explicitly exposed:
+  %b = load i64, ptr %x
+  %b32 = trunc i64 %b to i32
+  %c = inttoptr i32 %b32 to ptr
+
+  # 第二个例子：
+  Consider the following snippet in an LLVM IR:
+  %res = xor i64 %x, %x
+  This snippet does a bitwise logical exclusive of both operands, which in this case is twice the %x value.
+  This will always return 0 and instcombine catches this pattern and replaces all the values of %res
+  with the constant 0.
+  ```
+  - 相关用例：llvm/test/Transforms/InstCombine; Now, realistically, we recommend using it without going deeply into what it does. If you find that there are patterns that it does not optimize, consider whether this is beneficial for all targets (or a **canonical** way to represent something), and if yes, try to contribute it back to open source. If not, you must do that in your own target-specific pass.
+    ```
+    # git grep -l 'RUN: .*instcombine' llvm/test
+    define i32 @test13(i32 %A) {
+    ; CHECK-LABEL: @test13(
+    ; CHECK-NEXT:    ret i32 8
+    ;
+      %B = or i32 %A, 12
+      ; Always equal to 8
+      %C = and i32 %B, 8
+      ret i32 %C
+    }
+    ```
+    instcombine是一类pass
+    ```
+    llvm/lib/Target/AMDGPU/AMDGPUInstCombineIntrinsic.cpp
+    llvm/lib/Target/X86/X86InstCombineIntrinsic.cpp
+    llvm/lib/Transforms/AggressiveInstCombine
+    llvm/lib/Transforms/AggressiveInstCombine/TruncInstCombine.cpp
+    llvm/lib/Transforms/AggressiveInstCombine/AggressiveInstCombineInternal.h
+    llvm/lib/Transforms/AggressiveInstCombine/AggressiveInstCombine.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineAtomicRMW.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineCompares.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineCasts.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineInternal.h
+    llvm/lib/Transforms/InstCombine/InstCombineAddSub.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineLoadStoreAlloca.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineMulDivRem.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineSelect.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineSimplifyDemanded.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineVectorOps.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineAndOrXor.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineNegator.cpp
+    llvm/lib/Transforms/InstCombine/InstCombinePHI.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineCalls.cpp
+    llvm/lib/Transforms/InstCombine/InstCombineShifts.cpp
+    ```
+  - mem2reg: llvm/lib/Transforms/Utils/PromoteMemoryToRegister.cpp
+    ```
+    git grep -l 'RUN: .*mem2reg' llvm/test
+    llvm/test/Analysis/TypeBasedAliasAnalysis/argument-promotion.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/mem2reg/phi.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/mem2reg/single-block-alloca.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/mem2reg/single-store-alloca.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/mem2reg/store-to-part-of-alloca.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/sroa/split-pre-fragmented-store-2.ll
+    llvm/test/DebugInfo/Generic/assignment-tracking/sroa/split-pre-fragmented-store.ll
+    llvm/test/DebugInfo/Generic/dbg-value-lower-linenos.ll
+    llvm/test/DebugInfo/Generic/mem2reg-promote-alloca-1.ll
+    llvm/test/DebugInfo/Generic/mem2reg-promote-alloca-2.ll
+    llvm/test/DebugInfo/Generic/mem2reg-promote-alloca-3.ll
+    llvm/test/DebugInfo/Generic/volatile-alloca.ll
+    llvm/test/DebugInfo/X86/mem2reg_fp80.ll
+    llvm/test/DebugInfo/debugify.ll
+    llvm/test/Other/new-pm-print-pipeline.ll
+    llvm/test/Other/printer.ll
+    llvm/test/Transforms/ArgumentPromotion/basictest.ll
+    llvm/test/Transforms/ArgumentPromotion/profile.ll
+    llvm/test/Transforms/InstCombine/2004-09-20-BadLoadCombine.ll
+    llvm/test/Transforms/InstCombine/2004-09-20-BadLoadCombine2.ll
+    llvm/test/Transforms/InstCombine/2007-02-01-LoadSinkAlloca.ll
+    llvm/test/Transforms/InstCombine/2007-12-28-IcmpSub2.ll
+    llvm/test/Transforms/JumpThreading/and-and-cond.ll
+    llvm/test/Transforms/JumpThreading/and-cond.ll
+    llvm/test/Transforms/Mem2Reg/2002-03-28-UninitializedVal.ll
+    llvm/test/Transforms/Mem2Reg/2002-05-01-ShouldNotPromoteThisAlloca.ll
+    llvm/test/Transforms/Mem2Reg/2003-04-10-DFNotFound.ll
+    llvm/test/Transforms/Mem2Reg/2003-04-18-DeadBlockProblem.ll
+    llvm/test/Transforms/Mem2Reg/2003-04-24-MultipleIdenticalSuccessors.ll
+    llvm/test/Transforms/Mem2Reg/2003-06-26-IterativePromote.ll
+    llvm/test/Transforms/Mem2Reg/2003-10-05-DeadPHIInsertion.ll
+    llvm/test/Transforms/Mem2Reg/2005-06-30-ReadBeforeWrite.ll
+    llvm/test/Transforms/Mem2Reg/2005-11-28-Crash.ll
+    llvm/test/Transforms/Mem2Reg/ConvertDebugInfo.ll
+    llvm/test/Transforms/Mem2Reg/ConvertDebugInfo2.ll
+    llvm/test/Transforms/Mem2Reg/PromoteMemToRegister.ll
+    llvm/test/Transforms/Mem2Reg/UndefValuesMerge.ll
+    llvm/test/Transforms/Mem2Reg/alloca_addrspace.ll
+    llvm/test/Transforms/Mem2Reg/atomic.ll
+    llvm/test/Transforms/Mem2Reg/crash.ll
+    llvm/test/Transforms/Mem2Reg/dbg-inline-scope-for-phi.ll
+    llvm/test/Transforms/Mem2Reg/dbg_declare_to_value_conversions.ll
+    llvm/test/Transforms/Mem2Reg/debug-alloca-phi-2.ll
+    llvm/test/Transforms/Mem2Reg/debug-alloca-phi.ll
+    llvm/test/Transforms/Mem2Reg/debug-alloca-vla-1.ll
+    llvm/test/Transforms/Mem2Reg/debug-alloca-vla-2.ll
+    llvm/test/Transforms/Mem2Reg/ignore-droppable.ll
+    llvm/test/Transforms/Mem2Reg/ignore-lifetime.ll
+    llvm/test/Transforms/Mem2Reg/opaque-ptr.ll
+    llvm/test/Transforms/Mem2Reg/optnone.ll
+    llvm/test/Transforms/Mem2Reg/pr24179.ll
+    llvm/test/Transforms/Mem2Reg/pr37632-unreachable-list-of-stores.ll
+    llvm/test/Transforms/Mem2Reg/preserve-nonnull-load-metadata.ll
+    llvm/test/Transforms/Mem2Reg/single-store.ll
+    llvm/test/Transforms/Mem2Reg/undef-order.ll
+    llvm/test/Transforms/SimplifyCFG/hoist-from-addresstaken-block.ll
+    llvm/test/Transforms/SimplifyCFG/inline-asm-sink.ll
+    ```
+ - The memory to register rewriter:mem2reg 为什么它是优化的起点？
+   - 经过该 Pass 后，IR 变成了真正的 SSA 形式，后续优化得以高效、精确地进行：
+   - def-use 链清晰：每个值只有唯一的定义点，使用点可直接追踪。
+   - 支配信息可用：可以轻松判断某个定义是否支配其使用，这对代码移动、循环优化等至关重要。
+   - 别名分析负担减轻：大多数局部变量不再涉及内存，别名查询范围缩小。
+   - 经典优化立即生效：如常数传播、死代码消除、值合并、循环不变代码外提等，都基于 SSA 实现。
