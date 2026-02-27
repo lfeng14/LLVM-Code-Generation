@@ -676,3 +676,19 @@
 - 该优化步骤将函数的指针传参改为普通值传参
 
   <img width="650" height="650" alt="image" src="https://github.com/user-attachments/assets/58057749-9b61-4d66-8e9f-bdb7b5e75d89" />
+
+- dead argument element
+  
+  <img width="650" height="600" alt="image" src="https://github.com/user-attachments/assets/22242779-9cd5-4d2f-bd44-00cb7dbd4a37" />
+
+- functoin inline: https://llvm.org/doxygen/InlineAdvisor_8cpp_source.html
+
+  <img width="650" height="740" alt="image" src="https://github.com/user-attachments/assets/423b0275-7810-4ff0-9fcc-1201c06df147" />
+
+- 规约
+
+  <img width="650" height="700" alt="image" src="https://github.com/user-attachments/assets/9b6a9f0f-ba90-4f0e-a569-25d0c4a8e605" />
+
+- licm
+
+  <img width="650" height="750" alt="image" src="https://github.com/user-attachments/assets/9f059f29-92e2-4b77-a6b6-f335f4897c26" />
