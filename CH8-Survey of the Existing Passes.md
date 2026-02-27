@@ -669,3 +669,8 @@
    - 支配信息可用：可以轻松判断某个定义是否支配其使用，这对代码移动、循环优化等至关重要。
    - 别名分析负担减轻：大多数局部变量不再涉及内存，别名查询范围缩小。
    - 经典优化立即生效：如常数传播、死代码消除、值合并、循环不变代码外提等，都基于 SSA 实现。
+- loop close ssa
+  <img width="650" height="900" alt="image" src="https://github.com/user-attachments/assets/03657c95-c3fd-4129-9e74-861ed0b8493f" />
+
+- 该优化步骤将函数的指针传参改为普通值传参
+  <img width="650" height="650" alt="image" src="https://github.com/user-attachments/assets/58057749-9b61-4d66-8e9f-bdb7b5e75d89" />
