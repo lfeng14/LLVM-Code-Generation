@@ -698,3 +698,28 @@
 - licm
 
   <img width="650" height="750" alt="image" src="https://github.com/user-attachments/assets/9f059f29-92e2-4b77-a6b6-f335f4897c26" />
+
+- loop unroll
+
+  <img width="650" height="750" alt="image" src="https://github.com/user-attachments/assets/b1a07a7b-aa04-4c70-9540-a4e85494e403" />
+- reassociate:
+  
+  <img width="650" height="550" alt="image" src="https://github.com/user-attachments/assets/672f550c-4bc2-4f46-aba5-bcba52c8d947" />
+- simplifycfg pass
+
+  <img width="650" height="800" alt="image" src="https://github.com/user-attachments/assets/e1a572d6-cfe7-45b4-ad7d-7917262e1feb" />
+
+- This concludes our survey of the passes available in this library. Again, there are many more useful optimizations there and we encourage you to take a closer look before writing new optimizations. Chances are, what you need already exists!
+- Straight-line program vectorizer：The straight-line program (SLP) vectorizer takes a sequence of similar scalar instructions and groups them together to form a vectorized sequence.
+- Loop vectorizer：The input IR computes %arg[i] = %arg1[i] + %arg2[i]. After loop vectorization, each loop iteration computes eight values in parallel. The IR has been cropped to show only the interesting parts.
+- You then learned about some of the critical tools that you can leverage to help you understand what the compiler does: the verifier and printer
+- 本章总结：
+  - 介绍了自主探索 LLVM 优化功能的两种方法：**自上而下**（从 opt 帮助信息到实现）和**自下而上**（从目录结构、文件名关联到 CLI）。
+  - 讲解了理解编译器行为的关键工具：**验证器与打印机**。
+  - 梳理了 LLVM 中端核心内容：**分析 Pass、规范化 Pass、优化 Pass**。
+  - 本章仅初步介绍 LLVM 生态，提供整体概览，帮助读者自主探索并基于现有组件开发中端功能。
+  - 下一章将深入**目标相关领域**，讲解如何在中端中连接目标相关结构。
+
+#### 附件
+- analysis and transform pass: https://llvm.org/docs/Passes.html
+- 
