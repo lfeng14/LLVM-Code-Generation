@@ -1,14 +1,45 @@
-#### 章节目的
-<img width="640" height="2132" alt="image" src="https://github.com/user-attachments/assets/c175d1a0-c3b1-4c18-a227-3f804627eb75" />
+- 章节目的
+  - Building a compiler
+    - What is a compiler?
+    - Opening Clang's hood
+    - Building Clang
+    - Experimenting with Clang
+    
+  - Building LLVM
+    - Configuring the build system
+    - Crash course on Ninja
+    - Building the core LLVM project
+    
+  - Testing a compiler
+    - Crash course on the Google test infrastructure
+    - Crash course on the LLVM Integrated Tester
+    - Crash course on FileCheck
+    - LLVM unit tests
+    - LLVM functional tests
+    
+  - Understanding the directory structure
+    - High-level directory structure
+    - Focusing on the core LLVM project
+    
+  - A word on the include files
+    - Private headers
+    - What is the deal with <project>/include/<project>?
+    - What is include/<project>-c?
+    
+  - Overview of some of the LLVM components
+    - Generic LLVM goodness
+    - Working with the LLVM IR
+    - Generic backend infrastructure
+    - Target-specific constructs
 
 - Understand the different components that make a compiler
 - Build and test the LLVM project
 - Navigate LLVM’s directory structure and locate the implementation of different components
 - Contribute to the LLVM project
-<img width="1086" height="566" alt="image" src="https://github.com/user-attachments/assets/a649e34d-0a34-44d3-af78-1b43b81237df" />
+<img width="500" height="250" alt="image" src="https://github.com/user-attachments/assets/a649e34d-0a34-44d3-af78-1b43b81237df" />
 
 - clang definition:  Clang, is a compiler driver(include frontend and ): it invokes the different tools in the right order and pulls the related dependencies from the standard library to produce the final executable code.
-<img width="678" height="782" alt="image" src="https://github.com/user-attachments/assets/749da53d-b1a8-45c0-9861-61faa5e9d5b1" />
+<img width="340" height="390" alt="image" src="https://github.com/user-attachments/assets/749da53d-b1a8-45c0-9861-61faa5e9d5b1" />
 
 - In any case, the focus of this book is LLVM backends, so, why are we spending so much time on Clang?
   The reason is simple: Clang offers a familiar way to interact with LLVM constructs. By using the Clang frontend, you will be able to generate the LLVM intermediate representation (IR) by simply writing C/C++. We believe this is a gentler way to start your journey with LLVM backends.
@@ -24,7 +55,7 @@
   3. Assembler: This translates assembly code to an object file.
   ```
 - Here are the options to inspect their results(逐步深入不同阶段):
-  <img width="1200" height="628" alt="image" src="https://github.com/user-attachments/assets/01aabc2b-ea8f-4587-a61a-10fcd288a94d" />
+  <img width="600" height="300" alt="image" src="https://github.com/user-attachments/assets/01aabc2b-ea8f-4587-a61a-10fcd288a94d" />
 
 - Building LLVM：如何节省时间
   ```
@@ -69,7 +100,7 @@
 
 - lit 针对不同后缀找过滤指令，比如.ll .mlir:
   
-  <img width="746" height="542" alt="image" src="https://github.com/user-attachments/assets/8ea31ecb-0123-44b8-a1dd-3e9c7aa21f42" />
+  <img width="370" height="270" alt="image" src="https://github.com/user-attachments/assets/8ea31ecb-0123-44b8-a1dd-3e9c7aa21f42" />
   
   ```
   Using these directives, lit determines the following:
@@ -77,11 +108,11 @@
   2. Command: How is this test run? 如： ; RUN: echo %s %t
   3. Status: At the end of the run, is this result a pass or a failure?
   ```
-  <img width="1200" height="600" alt="image" src="https://github.com/user-attachments/assets/4f4c99a6-a40a-4760-b26d-426fda338a62" />
-  <img width="1210" height="278" alt="image" src="https://github.com/user-attachments/assets/ae51133f-22f3-4623-9a2a-c4a539a13b5e" />
+  <img width="600" height="300" alt="image" src="https://github.com/user-attachments/assets/4f4c99a6-a40a-4760-b26d-426fda338a62" />
+  <img width="600" height="140" alt="image" src="https://github.com/user-attachments/assets/ae51133f-22f3-4623-9a2a-c4a539a13b5e" />
 
 - Lit Command里的符号替换:
-  <img width="866" height="250" alt="image" src="https://github.com/user-attachments/assets/44936571-295b-482b-b0a0-1a73ee39d7e8" />
+  <img width="430" height="125" alt="image" src="https://github.com/user-attachments/assets/44936571-295b-482b-b0a0-1a73ee39d7e8" />
   ```
   ./bin/llvm-lit test/CodeGen/AArch64/GlobalISel/
 
@@ -118,8 +149,8 @@
   CHECK: The end
   CHECK: or is it
   ```
-  <img width="882" height="552" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
-  <img width="2006" height="1044" alt="image" src="https://github.com/user-attachments/assets/0e6bbc70-93d2-4e82-bb1f-f429c9fc35f0" />
+  <img width="440" height="275" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
+  <img width="100" height="500" alt="image" src="https://github.com/user-attachments/assets/0e6bbc70-93d2-4e82-bb1f-f429c9fc35f0" />
 - 有check-label后，划分匹配区域，label后面的check仅匹配当前块
     ```
     define %struct.C* @C_ctor_base(...) {
@@ -136,7 +167,7 @@
     ; CHECK-LABEL: D_ctor_base:
     ```
 - FileCheck支持选项
-  <img width="1210" height="926" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
+  <img width="600" height="460" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
 
 - CMAKE使用再详细介绍
 - 功能行测试失败：1、编译失败 2、编译没问题二进制有功能问题
