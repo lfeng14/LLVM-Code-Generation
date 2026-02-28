@@ -112,6 +112,7 @@
   <img width="600" height="140" alt="image" src="https://github.com/user-attachments/assets/ae51133f-22f3-4623-9a2a-c4a539a13b5e" />
 
 - Lit Command里的符号替换:
+  
   <img width="430" height="125" alt="image" src="https://github.com/user-attachments/assets/44936571-295b-482b-b0a0-1a73ee39d7e8" />
   ```
   ./bin/llvm-lit test/CodeGen/AArch64/GlobalISel/
@@ -167,6 +168,7 @@
     ; CHECK-LABEL: D_ctor_base:
     ```
 - FileCheck支持选项
+  
   <img width="600" height="460" alt="image" src="https://github.com/user-attachments/assets/4bc6af7f-0288-4999-8a2d-b0417d28c7b5" />
 
 - CMAKE使用再详细介绍
