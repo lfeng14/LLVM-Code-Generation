@@ -114,6 +114,7 @@
 - Lit Command里的符号替换:
   
   <img width="430" height="125" alt="image" src="https://github.com/user-attachments/assets/44936571-295b-482b-b0a0-1a73ee39d7e8" />
+  
   ```
   ./bin/llvm-lit test/CodeGen/AArch64/GlobalISel/
 
@@ -121,7 +122,6 @@
   -v Verbose: Print the RUN lines and the output of a test on failure
   -a Print all: Same as verbose but for all tests, not just the failing ones
   ```
-  
 - Command示例：
   ```
   FileCheck --input-file input.txt check-file.txt
