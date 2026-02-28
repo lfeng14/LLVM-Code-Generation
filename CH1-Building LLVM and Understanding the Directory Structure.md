@@ -153,7 +153,7 @@
   
   <img width="440" height="275" alt="image" src="https://github.com/user-attachments/assets/3bf7b80b-951e-4540-b242-0ebe859d50d8" />
 
-  <img width="200" height="800" alt="image" src="https://github.com/user-attachments/assets/0e6bbc70-93d2-4e82-bb1f-f429c9fc35f0" />
+  <img width="450" height="250" alt="image" src="https://github.com/user-attachments/assets/0e6bbc70-93d2-4e82-bb1f-f429c9fc35f0" />
    
 - 有check-label后，划分匹配区域，label后面的check仅匹配当前块
     ```
