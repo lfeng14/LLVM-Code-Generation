@@ -65,15 +65,14 @@ that value is still reachable from this point.
   - We give up on constants when the constant type changes; for instance, zero extension (for example, unsigned a = -3; long long b = a;).
 - Constant class派生类 ConstantInt；Value::replaceAllUsesWith(Value *NewVal).
 - LLVM explicitly disabled all RTTI support. Instead, it has its own RTTI support that essentially assigns an embedded unique identifier to each class and uses this identifier to statically (that is, without RTTI support) check if an instance is of a certain type. What you need to remember is that you will need to use LLVM’s rolled-out RTTI constructs (isa<typename>(Obj), cast<typename>(Obj), and dyn_cast<typename>(Obj)
-- 常量传播也存在增加开销的情况：
+- 常量传播也存在增加开销的情况，举例：
   ```
   cst = load <low_part(262144)>   // 指令1
   cst |= load <high_part(262144)> // 指令2
   a = cst + b                      // 指令3
   c = cst + 3                      // 指令4
   e = c + d                        // 指令5
-  这里常量 cst 只被构建了一次，然后被重复使用。
-  如果进行常量传播，将 cst 替换到所有使用处：
+  # 这里常量 cst 只被构建了一次，然后被重复使用。如果进行常量传播，将 cst 替换到所有使用处：
   text
   cst = load <low_part(262144)>
   cst |= load <high_part(262144)>
@@ -101,4 +100,4 @@ that value is still reachable from this point.
 - 论文：Simple and Efficient Construction of Static Single Assignment Form by Braun et al. published in Compiler Construction in 2013
 - value class：https://llvm.org/doxygen/classllvm_1_1Value.html
 - Loop：https://llvm.org/docs/LoopTerminology.html
-- 常量上提： llvm/lib/Transforms/Scalar/ConstantHoisting.cpp
+- 常量上提： https://llvm.org/doxygen/ConstantHoisting_8cpp_source.html
