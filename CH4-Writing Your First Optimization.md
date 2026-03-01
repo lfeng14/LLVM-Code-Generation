@@ -46,14 +46,13 @@
 - BasicBlockFrequency: By default, the block frequencies are heuristically computed. For instance, a block before an if-then-else statement would have a frequency of 1, the then and else blocks a frequency of 0.5, and the block after the if-then-else-statement would have a frequency of 1. Profile-guided information means that you compile your program once with some instrumentations enabled. This instrumentation collects the frequencies of the basic blocks of your program while you run it on representative examples.
 This information can then be fed back to the compiler to improve the accuracy of the cost models/heuristics.
 - More precise instruction properties – scheduling model and instruction description:
-  ```
-  1. 代码编译**lowering 过程**中，越接近最终可执行代码，优化转换可利用的目标平台信息越多。
-  2. **Machine IR 及更低层级**可通过 `MCInstrDesc` 结构体获取指令底层信息：指令类型、代码大小、调度类 ID 等。
-  3. 可通过 `MachineInstr::getDesc()` 或 `TargetInstrInfo` 直接获取 `MCInstrDesc`。
-  4. 目标**调度模型**由 `MCSchedModel` 表示，包含指令延迟、吞吐量等信息，可从 `MachineFunction` 逐级获取。
-  5. 用指令的调度类 ID 可从模型中查到对应的 `MCSchedClassDesc` 详细信息。
-  6. 调度模型细节将在第15章展开，本节最后会介绍优化领域常用术语。
-  ```
+  - 代码编译**lowering 过程**中，越接近最终可执行代码，优化转换可利用的目标平台信息越多。
+  - **Machine IR 及更低层级**可通过 `MCInstrDesc` 结构体获取指令底层信息：指令类型、代码大小、调度类 ID 等。
+  - 可通过 `MachineInstr::getDesc()` 或 `TargetInstrInfo` 直接获取 `MCInstrDesc`。
+  - 目标**调度模型**由 `MCSchedModel` 表示，包含指令延迟、吞吐量等信息，可从 `MachineFunction` 逐级获取。
+  - 用指令的调度类 ID 可从模型中查到对应的 `MCSchedClassDesc` 详细信息。
+  - 调度模型细节将在第15章展开，本节最后会介绍优化领域常用术语。
+    
 - Instcombine: taking a = b * 2 and rewriting it into a = b << 1 is a sort of instcombine.
 - Fixed point：A value is said to be alive at a given program point when its definition reaches this point, and use of
 that value is still reachable from this point.
