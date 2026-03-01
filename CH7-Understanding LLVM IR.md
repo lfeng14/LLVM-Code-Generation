@@ -1,5 +1,5 @@
 - This cheat sheet is obviously not exhaustive, but we believe it should give you a better grasp of how LLVM IR is structured and how it maps to the related APIs.
-  <img width="1076" height="1286" alt="image" src="https://github.com/user-attachments/assets/da39fde7-2a51-4e6b-9ab6-e2ac20226e02" />
+  <img width="600" height="800" alt="image" src="https://github.com/user-attachments/assets/da39fde7-2a51-4e6b-9ab6-e2ac20226e02" />
 - 
   ```
   $ cmake -DCMAKE_PREFIX_PATH=/usr  ../
@@ -16,7 +16,7 @@
   学完可掌握 LLVM IR 与 Pass 操作、调试能力，为后续后端（Machine IR）学习奠定基础，对应第 7–10 章内容。
   ```
 - type: single type/label type/aggregate type
-  <img width="1126" height="1388" alt="image" src="https://github.com/user-attachments/assets/148f1b59-7e45-46f0-b51a-0b6cb411da32" />
+  <img width="600" height="800" alt="image" src="https://github.com/user-attachments/assets/148f1b59-7e45-46f0-b51a-0b6cb411da32" />
   ```
   define i32 @foo(i32, i32, i32 %arg) {
     entry:
