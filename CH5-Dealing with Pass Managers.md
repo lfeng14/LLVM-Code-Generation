@@ -27,13 +27,8 @@
     createAlwaysInlinerLegacyPass for the legacy pass manager
     AlwaysInlinerPass for the new pass manager
   ```
+-  be careful with the order in which you create your XXXAnalysisManager instances. They need to be created from the narrower to the broader scope.
 
-- 
-  ```
-  be careful with the order in which you create your XXXAnalysisManager instances. They need to be created from the narrower to the broader scope.](https://llvm.
-  org/docs/NewPassManager.html#just-tell-me-how-to-run-the-default-optimization-pipeline-
-  with-the-new-pass-manager.
-  ```
 #### further reading
 - Using the New Pass Manager：https://llvm.org/docs/NewPassManager.html#implementing-analysis-invalidation
 - Explanation of how to write a pass with the new pass manager: https://llvm.org/docs/WritingAnLLVMNewPMPass.html
