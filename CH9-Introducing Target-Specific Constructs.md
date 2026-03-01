@@ -134,7 +134,7 @@
   first argument), to produce IntrinsicsH2BLB.h (the second argument), using the -gen-intrinsic-
   enums -intrinsic-prefix=h2blb command-line options (the remaining arguments). 
   ```
-
+ - intrinsic前端使用的文件
  <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
 
 #### 附件
