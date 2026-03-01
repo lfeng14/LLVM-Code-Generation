@@ -10,8 +10,8 @@
   - 在基类 P 中，可以通过 static_cast<Derived*>(this) 将 this 转换为子类指针，从而在编译期确定要调用的子类方法，实现静态多态。
   - 这样，方法分派在编译时通过模板实例化完成，不再需要虚函数表，减少了运行时的间接调用开销。
 - legacy pass manager VS new pass manager
-  <img width="1322" height="626" alt="image" src="https://github.com/user-attachments/assets/6f0a35ca-051f-4858-8897-68b78bbb730e" />
-  <img width="1334" height="484" alt="image" src="https://github.com/user-attachments/assets/db07a505-8c6a-423a-b18e-0c4056d42973" />
+  <img width="650" height="300" alt="image" src="https://github.com/user-attachments/assets/6f0a35ca-051f-4858-8897-68b78bbb730e" />
+  <img width="650" height="240" alt="image" src="https://github.com/user-attachments/assets/db07a505-8c6a-423a-b18e-0c4056d42973" />
   
 - you will be able to use the related analysis in the runOnXXX method by calling Pass::getAnalysis</*PassClass*/>().
 - legacy pass manager:
