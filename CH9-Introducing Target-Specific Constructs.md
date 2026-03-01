@@ -110,8 +110,19 @@
   - 1. 目标XXX的专用固有函数定义在**IntrinsicsXXX.td**中，并被包含到`llvm/include/llvm/IR/Intrinsics.td`。
   - 2. 该文件经**gen-intrinsic-enums TableGen**处理，生成`IntrinsicsXXX.h`。
   - 3. 头文件在`llvm/lib/IR/Intrinsics.cpp`中引用，供LLVM IR层使用。
+  - 实现自定义固有函数需四步：创建并填写`.td`文件、引入到总文件、对接TableGen后端、在`.cpp`中使用新生成头文件。
 
-
-实现自定义固有函数需四步：创建并填写`.td`文件、引入到总文件、对接TableGen后端、在`.cpp`中使用新生成头文件。
+- What you see on the first line of this snippet is a sort of namespace, called TargetPrefix. If you remember your TableGen syntax from Chapter 6, you will know that this effectively sets a TargetPrefix field for all the records (that is, the instances identified with the def keyword) within this block.
+  - 内置函数名以 int_ 开头 + 目标前缀 + 功能名，命名规则可自定义；
+  - Intrinsic 类仅返回类型参数必填，其余参数控制优化 / 指令选择属性；
+  - 支持预定义 / 自定义类型，示例函数为 16 位入参、32 位返回值。
+  ```
+  let TargetPrefix = “h2blb” in {
+  def int_h2blb_widening_smul :
+  Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
+  def int_h2blb_widening_umul :
+  Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
+  } // end TargetPrefix = “h2blb”
+  ```
 #### 附件
 - https://github.com/llvm/llvm-project/blob/main/llvm/lib/TargetParser/Triple.cpp
