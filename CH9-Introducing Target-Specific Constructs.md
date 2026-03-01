@@ -136,6 +136,51 @@
   ```
  - intrinsic前端使用的文件
  <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
-
+  - 1. 手动编写内置函数原型与属性字符串繁琐且后期难维护。
+  - 2. gen-clang-builtins 的 TableGen 功能对 LLVM 编译器开发者十分实用。
+  - 3. 本节将讲解新 TableGen 语法及构建系统中启用对应后端的方法，但不介绍全部功能。
+  - 4. 相关类与定义在 `BuiltinsBase.td`，通用内置函数在 `Builtins.td`（含使用示例）。
+  - 5. 定义 H2BLB 内置函数不再用 `.def` 文件，改为编写 `BuiltinsH2BLB.td`。
+  ```
+  int widening_signed_multiply(short a, short b) {
+  return __builtin_h2blb_widening_smul(a, b); # 这个是前端生成的
+  }
+  # 转为ir
+  define i32 @widening_signed_multiply(i16 signext %a, i16 signext %b) {
+  entry:
+  ret i32 %0
+  %0 = tail call i32 @llvm.h2blb.widening.smul(i16 %a, i16 %b)
+  }
+  ```
+- In this section, you learned how to create target-specific intrinsics at the LLVM IR level and how to connect them, all the way up to a source language level, through Clang. This offers your users a unique way to interact with your target.
+- In the next section, we show you how to set up your TargetTransformInfo class. This class allows you to influence optimizers by providing custom cost modeling
+- Introducing target-specific costs
+  - 1. 在`TargetTransformInfo`类中引入**目标特定成本**，只需在`BasicTTIImplBase`的目标特定实现里重写对应方法。
+  - 2. 需重写的方法由想要影响的**优化器**决定，可查看优化器实现来确定依赖的`TargetTransformInfo`接口。
+  - 3. 可优先重写最实用的API，后续再逐步补全所有方法。
+  - 4. 示例：若要控制**加载/存储向量化器**行为（如仅支持`<2 x i16>`加载），需在`H2BLBTTIImpl`类中新增并实现`getLoadVectorFactor`方法。
+  ```
+  # TargetTransformInfo（TTI）实现的一个成员，用于指导向量化器（如循环向量化器）在进行加载操作向量化时，决定实际可用的向量宽度因子
+  unsigned H2BLBTTIImpl::getLoadVectorFactor(unsigned VF, unsigned LoadSize,
+  unsigned ChainSizeInBytes, VectorType *VecTy) const {
+    unsigned ElemSize = VecTy->getScalarSizeInBits();
+    if (ElemSize != 16)
+    return 0;
+    return std::min(VF, 2u);
+  }
+  ```
+  ```
+  opt -passes=load-store-vectorizer %s -S -mtriple=h2blb input.ll -o -
+  ```
+- passmanager pipeline
+  - 1. **注册自定义Pass**：需在`llvm/lib/Target/H2BLB/H2BLBPassRegistry.def`文件中，通过`FUNCTION_PASS`宏注册目标Pass，指定其命令行选项名（如`h2blb-simple-cst-prop`）和构造方式。
+  - 2. **调用自定义Pass**：确保目标架构已注册（指定正确Triple值），可通过`opt`命令调用，示例：`opt -mtriple=h2blb -passes=h2blb-simple-cst-prop %s -S input.ll -o –`。
+  - 3. **注入默认Pass流水线**：在`TargetMachine::registerPassBuilderCallbacks`中，通过`PassBuilder`的`registerXXXEPCallback`方法（如`registerPeepholeEPCallback`）将Pass插入默认流水线，插入位置取决于Pass功能。
+  - 自定义Pass需先在指定`.def`文件中通过宏完成注册，明确命令行调用名和构造逻辑；
+  - 可通过`opt`命令结合目标Triple值直接调用已注册的Pass；
+  - 若要让Pass融入默认流水线，需在指定回调函数中通过`PassBuilder`的扩展点方法配置，插入位置需匹配Pass用途。
+  ```
+  opt -O1 -mtriple=h2blb -debug-pass-manager %s -S -o /dev/null
+  ```
 #### 附件
 - https://github.com/llvm/llvm-project/blob/main/llvm/lib/TargetParser/Triple.cpp
