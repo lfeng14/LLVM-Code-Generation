@@ -135,7 +135,9 @@
   enums -intrinsic-prefix=h2blb command-line options (the remaining arguments). 
   ```
  - intrinsic前端使用的文件
- <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
+   
+  <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
+ 
   - 1. 手动编写内置函数原型与属性字符串繁琐且后期难维护。
   - 2. gen-clang-builtins 的 TableGen 功能对 LLVM 编译器开发者十分实用。
   - 3. 本节将讲解新 TableGen 语法及构建系统中启用对应后端的方法，但不介绍全部功能。
