@@ -119,10 +119,23 @@
   ```
   let TargetPrefix = “h2blb” in {
   def int_h2blb_widening_smul :
-  Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
+    # only the first argument, which describes the return type of the intrinsic, is mandatory.
+    # return a 32-bit integer, and take two 16-bit integers as input.
+    Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
   def int_h2blb_widening_umul :
-  Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
+    Intrinsic<[llvm_i32_ty], [llvm_i16_ty, llvm_i16_ty]>;
   } // end TargetPrefix = “h2blb”
   ```
+- intrinsic包含各个架构：https://github.com/llvm/llvm-project/blob/main/llvm/include/llvm/IR/Intrinsics.td
+- llvm/include/llvm/IR/CMakeLists.txt
+  ```
+  tablegen(LLVM IntrinsicsH2BLB.h -gen-intrinsic-enums -intrinsic-prefix=h2blb)
+  This line tells the build system to run the LLVM TableGen tool, ${BUILD_DIR}/bin/llvm-tblgen (the
+  first argument), to produce IntrinsicsH2BLB.h (the second argument), using the -gen-intrinsic-
+  enums -intrinsic-prefix=h2blb command-line options (the remaining arguments). 
+  ```
+
+ <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
+
 #### 附件
 - https://github.com/llvm/llvm-project/blob/main/llvm/lib/TargetParser/Triple.cpp
