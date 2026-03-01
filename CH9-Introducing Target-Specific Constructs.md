@@ -135,25 +135,25 @@
   enums -intrinsic-prefix=h2blb command-line options (the remaining arguments). 
   ```
  - intrinsic前端使用的文件
-   
+    - 1. 手动编写内置函数原型与属性字符串繁琐且后期难维护。
+    - 2. gen-clang-builtins 的 TableGen 功能对 LLVM 编译器开发者十分实用。
+    - 3. 本节将讲解新 TableGen 语法及构建系统中启用对应后端的方法，但不介绍全部功能。
+    - 4. 相关类与定义在 `BuiltinsBase.td`，通用内置函数在 `Builtins.td`（含使用示例）。
+    - 5. 定义 H2BLB 内置函数不再用 `.def` 文件，改为编写 `BuiltinsH2BLB.td`。
+    ```
+    int widening_signed_multiply(short a, short b) {
+    return __builtin_h2blb_widening_smul(a, b); # 这个是前端生成的
+    }
+    # 转为ir
+    define i32 @widening_signed_multiply(i16 signext %a, i16 signext %b) {
+    entry:
+    ret i32 %0
+    %0 = tail call i32 @llvm.h2blb.widening.smul(i16 %a, i16 %b)
+    }
+    ```
+    
   <img width="610" height="200" alt="image" src="https://github.com/user-attachments/assets/41107fad-8124-4157-b795-987485ae3522" />
  
-  - 1. 手动编写内置函数原型与属性字符串繁琐且后期难维护。
-  - 2. gen-clang-builtins 的 TableGen 功能对 LLVM 编译器开发者十分实用。
-  - 3. 本节将讲解新 TableGen 语法及构建系统中启用对应后端的方法，但不介绍全部功能。
-  - 4. 相关类与定义在 `BuiltinsBase.td`，通用内置函数在 `Builtins.td`（含使用示例）。
-  - 5. 定义 H2BLB 内置函数不再用 `.def` 文件，改为编写 `BuiltinsH2BLB.td`。
-  ```
-  int widening_signed_multiply(short a, short b) {
-  return __builtin_h2blb_widening_smul(a, b); # 这个是前端生成的
-  }
-  # 转为ir
-  define i32 @widening_signed_multiply(i16 signext %a, i16 signext %b) {
-  entry:
-  ret i32 %0
-  %0 = tail call i32 @llvm.h2blb.widening.smul(i16 %a, i16 %b)
-  }
-  ```
 - In this section, you learned how to create target-specific intrinsics at the LLVM IR level and how to connect them, all the way up to a source language level, through Clang. This offers your users a unique way to interact with your target.
 - In the next section, we show you how to set up your TargetTransformInfo class. This class allows you to influence optimizers by providing custom cost modeling
 - Introducing target-specific costs
