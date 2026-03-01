@@ -30,8 +30,7 @@
   ```
 - Encoding:
   ```
-   Encodings are target-specific and are usually provided by the hardware vendor through their Instruction
-   Set Architecture (ISA) document.
+   Encodings are target-specific and are usually provided by the hardware vendor through their Instruction Set Architecture (ISA) document.
   ```
 - Module：translation unit (TU) or compilation unit (CU). A module is a container for the program currently being compiled.
 - 构建测试
@@ -163,26 +162,18 @@
    	.ident	"Ubuntu clang version 18.1.3 (1ubuntu1)"
    	.section	".note.GNU-stack","",@progbits
   ```
-- basic block: （**注意这里是bb块内的单个路径只有一个入口一个出口,只能从块的最后一条指令离开**）A basic block is a single-entry single-exit (SESE) region of code where the entry point is at the beginning of the region and the exit point at the end.
-  ;basic blocks are formed such that they are maximal;
-  ```
-   This implies that when you
-   hit an instruction, by definition, all the instructions before this instruction within the same block have
-   been executed, and all the instructions remaining in this basic block will be executed.
-  ```
-  ```
-   1. 基本块（BasicBlock）中：
-      - 用 `BasicBlock::getFirstNonPHI()` 获取**首条非PHI指令**
-      - 用 `BasicBlock::getTerminator()` 获取**终结指令**
-   2. 对基本块做局部修改时，应遍历 **`getFirstNonPHI()` 到 `getTerminator()`** 之间的指令。
-  ```
+- basic block: （**注意这里是bb块内的单个路径只有一个入口一个出口,只能从块的最后一条指令离开**）A basic block is a single-entry single-exit (SESE) region of code where the entry point is at the beginning of the region and the exit point at the end.;basic blocks are formed such that they are maximal; This implies that when you hit an instruction, by definition, all the instructions before this instruction within the same block have been executed, and all the instructions remaining in this basic block will be executed.
+
+  - 基本块（BasicBlock）中：
+    - 用 `BasicBlock::getFirstNonPHI()` 获取**首条非PHI指令**
+    - 用 `BasicBlock::getTerminator()` 获取**终结指令**
+  - 对基本块做局部修改时，应遍历 **`getFirstNonPHI()` 到 `getTerminator()`** 之间的指令。
 - There are a couple of differences compared to the BasicBlock class:
-  ```
-   • APIs: begin(), end(), and getParent()
-   • MachineBasicBlock instances can have zero or several terminator instructions.
-   • MachineBasicBlock instances offer a direct API to traverse their predecessors and successors through predXXX and succXXX methods. 
-  ```
-- llvm instruction method: moveBefore, moveAfter, insertBefore gerParent
+  - APIs: begin(), end(), and getParent()
+  - MachineBasicBlock instances can have zero or several terminator instructions.
+  - MachineBasicBlock instances offer a direct API to traverse their predecessors and successors through predXXX and succXXX methods. 
+
+- llvm instruction method: moveBefore, moveAfter, insertBefore getParent
 - llvm machine instruction method: MachineInstr::defs()) and arguments (MachineInstr::uses())
 - CFG: The first node executed in a CFG is called the entry point, and the last possible ones are called exit points
 - LLVM offers an API, named ReversePostOrderTraversal, to use RPO on your functions out of the box. This API is part of the ADT library.A reverse post-order (RPO) traversal defines an order in which the nodes of a CFG are visited.
