@@ -1,3 +1,9 @@
+- To this end, you will learn the following:
+  - How to add a new target to the LLVM infrastructure, including the Clang frontend
+  - How to add intrinsics, which are a mechanism that allows you to expose target-specific
+  - constructs at the language level (C, C++, etc.) all the way down to the backend
+  - How to create your own TargetTransformInfo sub-class, which is the API that supplies the information that controls/informs some of the middle-end optimizations
+  - How to inject your custom passes in the default pipeline
 - 以章节为单位查看提交内容
   ```
   #Using these tags, you can easily see all the changes made in this chapter in one Git diff:
