@@ -13,6 +13,11 @@
   #And you see all the changes per commit for this chapter:
   $ git log -p begin_ch9^..end_ch9
   ```
+- The connection to the build system involves two main tasks:
+  - Registering your target in CMake
+  - Providing a few required functions
+you either add your target to the LLVM_ALL_TARGETS variable or the LLVM_ALL_EXPERIMENTAL_TARGETS variable. The differences between the variables are whether your target is considered experimental or a main target (as the names of the variables imply) or whether it will be built by default. The experimental targets are not built by default.
+
 - step:
   - Registering your target in CMake
   - Providing a few required functions
