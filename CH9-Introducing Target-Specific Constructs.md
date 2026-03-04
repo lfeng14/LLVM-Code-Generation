@@ -201,5 +201,6 @@ you either add your target to the LLVM_ALL_TARGETS variable or the LLVM_ALL_EXPE
   ```
   opt -O1 -mtriple=h2blb -debug-pass-manager %s -S -o /dev/null
   ```
+- Concretely, when Clang creates the pass pipeline, it uses one pipeline for the optimization sequence at the LLVM IR level and one pass pipeline to go from LLVM IR to assembly code. In other words, the default pass pipeline is composed of two sub-pipelines, the optimization pipeline and the codegen one.
 #### 附件
 - https://github.com/llvm/llvm-project/blob/main/llvm/lib/TargetParser/Triple.cpp
