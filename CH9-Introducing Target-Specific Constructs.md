@@ -109,6 +109,12 @@ you either add your target to the LLVM_ALL_TARGETS variable or the LLVM_ALL_EXPE
   target triple = “h2blb”
   ...
   ```
+- intrinsic使用IntrinsicInst class表示，a sub-class of the CallInst class,the main distinction between an intrinsic and a function call is that LLVM IR knows that the destination of the call is a built-in function；他有使用成本，不参与优化，所以事先考虑好是否有必要；
+- you can see that the target-specific intrinsics for the XXX target are put in an IntrinsicsXXX. td file. That file is included in another Intrinsics.td file, located in llvm/include/llvm/IR, that gathers all the intrinsics for all the targets in LLVM. This file is fed to the gen-intrinsic-enums TableGen backend that generates an IntrinsicsXXX.h file, in ${BUILD_DIR}/include/llvm/IR. Finally, this file is included and used in the llvm/lib/IR/Intrinsics.cpp file such that the function definitions at the LLVM IR level know about all the intrinsics。
+
+<img width="460" height="150" alt="image" src="https://github.com/user-attachments/assets/24bf3f67-ad8f-4a79-ac8b-d3c26205c9e8" />
+
+-  the TableGen backend produces the name of the built-in LLVM IR functions by replacing int_ with llvm. and all the other underscores (_) in the name of the record with a dot (.). For instance, int_ h2blb_widening_smul will show up in the textual LLVM IR representation as llvm.h2blb.widening.smul. 
 - Creating your own intrinsics: Intrinsics是 C/C++ 等语言层面暴露的特殊函数，可使用目标平台特定指令（如 AArch64/X86 的 AES 硬件加密指令）以加速算法。本节主要讲解如何为后端自定义 Intrinsics，包括让 Clang 识别并将其注册为合法的 LLVM IR 内置函数。Intrinsics 与汇编代码的关联会在后续章节介绍，需在 Machine IR 层搭建相关基础架构。先探讨核心问题：何时需要使用 Intrinsics。
   ```
   Intrinsics are special functions that are exposed at the source language level, such as C and C++, that
