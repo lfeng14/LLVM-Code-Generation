@@ -1,7 +1,7 @@
 - print-before-all/print-after-all: Print the IR before (or after, respectively) each pass in the current pipeline.
 - print-before/print-after=PassName1[,PassName2]*: Print the IR before (or after, respectively) PassName1, PassName2, and so on, where PassNameI is the CLI option name of the related pass (see Chapter 5 to find out how to find this name). Like all the CLI options that accept comma-separated lists in the LLVM CLI, you can specify this option several times. This is equivalent to providing the concatenated comma-separated list to one instance of the option
 - to start producing debug logs in your pass, you must do the following:
-  - 1.Include the Debug.h, from the Support library, in your pass.
+  - 1. Include the Debug.h, from the Support library, in your pass.
   - 2. Define the DEBUG_TYPE macro. We recommend sticking to the same name as the one you used for the CLI option name unless it makes sense to group your debug log with other passes.
   - 3. Use the LLVM_DEBUG macro to start performing debug-log-specific tasks such as printing some message or the content of a variable
 
