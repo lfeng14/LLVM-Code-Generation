@@ -47,3 +47,5 @@ llc $@ -o - | grep 'bfi'
   - leak: Detects memory leaks
 #### further
 - https://llvm.org/docs/OptBisect.html
+- https://llvm.org/docs/CommandGuide/llvm-reduce.htm
+- https://clang.llvm.org/docs/AddressSanitizer.html
