@@ -45,6 +45,59 @@ llc $@ -o - | grep 'bfi'
   - thread: Detects race conditions
   - undefined: Detects pieces of code that rely on undefined behavior
   - leak: Detects memory leaks
+- optimization disabled (-O0) and the debug information enabled (-g). This is exactly what the Debug CMake build type is about。
+- The main advantage of the debugger compared to the logging mechanism presented earlier is that you don’t have to re-compile your program each time you want to inspect something that hasn’t been logged yet.
+  - Know where you are in the program
+  - Stop at specific locations
+  - Inspect the state of the program
+  ```
+  $ lldb
+  (lldb) target create ./myExec
+  (lldb) run arg0 arg1 arg2
+  ```
+  ```
+  $ lldb -- ./myExec arg0 arg1 arg2
+  (lldb) run
+  ```
+- There are mainly two ways to specify when to stop a program:
+  - Use breakpoints to stop the program when you reach a specific location.
+  - Use watchpoints to stop the program when some data is read and/or written
+- To set a breakpoint, we can use the b command, followed by one of the given patterns:
+  - filename:lineNumber: For instance, main.cpp:12 to stop at the 12th line in the main.cpp file
+  - functionName: For instance, main to stop at the beginning of the main function (more precisely, after the main function’s prologue)
+  - 0xRawAddress: For instance, 0xf00ba4 to stop at the given program counter, which is represented by a raw address, in hexadecimal format, within the program being debugged
+- LLDB provides extensive documentation of its commands through the help command. Simply run help <command> (for example, help breakpoint) within lldb to get the help for the given family of commands, then help <command> <subcommand> (for example, help breakpoint set) for the help message of the specific subcommand. For instance, you can view the exhaustive list of the supported ways to set a breakpoint with the b command by using help b.
+- lldb支持复杂断点表示，break modify
+  ```
+  (lldb) b BinaryOperator::BinaryOperator
+  Breakpoint 8: 2 locations.
+  (lldb) break modify 8 -c 'iType == llvm::Instruction::BinaryOps::SDiv && S2-
+  >getValueID() == llvm::Value::ValueTy::ConstantIntVal && ((ConstantInt*)S2)-
+  >getZExtValue() == 5'
+  ```
+- 这个命令是在 LLDB 调试器中设置一个写入监视点，用于监控指定变量 MyVar 在内存中的修改操作。当程序执行过程中对该变量进行写入（赋值）时，调试器会暂停程序，并提示监视点命中
+  ```
+  (lldb) watchpoint set variable -w write MyVar
+  ```
+- here are the main LLDB commands you can use to control the execution:
+  - next (or n): Executes the next statement of the program.
+  - step (or s): This is like the next command but if the statement is a function call, it stops at the first statement in the target function. In contrast, the next command simply executes the whole function call.
+  - finish (or fin): This executes the program until it finishes executing the current frame. In other words, this command allows us to exit the current function call by executing whatever is left to be executed in this function.
+  - thread until <lineNumber>: This executes the program until the specified lineNumber is reached. If the normal execution of the program doesn’t go through the specified line number, LLDB stops the program when returning from the current frame.
+  - thread return <value>: This overrides the program’s execution by directly returning from the current frame with the provided value. This command illustrates how powerful debuggers are; you can alter the execution of the program however you want. Be aware that the state of the program may be incorrect since you may have skipped a lot of code that’s normally executed.
+- 例子：For instance, consider the following snippet and assume that the next statement to be executed is the one with the --> symbol:
+  ```
+  int foo(int a, int b) {
+  --> int c = bar(a);
+  return c + b;
+  }
+ ```
+Now, let’s describe what would happen if we executed one of the following commands at this point:
+- next: The program will execute until the return c + b statement.
+- step: The program will execute until it reaches the first statement in bar.
+- finish: The program will execute until it exits foo – that is, it stops at the first statement after the call to foo in the caller function.
+- thread return 12: This bypasses the normal execution of the program and returns a value of 12 straight away. The program stops at the same point that the finish command would have yielded.
+
 #### further
 - https://llvm.org/docs/OptBisect.html
 - https://llvm.org/docs/CommandGuide/llvm-reduce.htm
