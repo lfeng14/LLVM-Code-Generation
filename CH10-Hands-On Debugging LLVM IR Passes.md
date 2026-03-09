@@ -91,14 +91,43 @@ llc $@ -o - | grep 'bfi'
   --> int c = bar(a);
   return c + b;
   }
- ```
-Now, let’s describe what would happen if we executed one of the following commands at this point:
-- next: The program will execute until the return c + b statement.
-- step: The program will execute until it reaches the first statement in bar.
-- finish: The program will execute until it exits foo – that is, it stops at the first statement after the call to foo in the caller function.
-- thread return 12: This bypasses the normal execution of the program and returns a value of 12 straight away. The program stops at the same point that the finish command would have yielded.
+  ```
+  Now, let’s describe what would happen if we executed one of the following commands at this point:
+  - next: The program will execute until the return c + b statement.
+  - step: The program will execute until it reaches the first statement in bar.
+  - finish: The program will execute until it exits foo – that is, it stops at the first statement after the call to foo in the caller function.
+  - thread return 12: This bypasses the normal execution of the program and returns a value of 12 straight away. The program stops at the same point that the finish command would have yielded.
 
+- 钩子函数
+  ```
+  (lldb) b populate_function.cpp:42
+  Breakpoint 3: <snip>
+  (lldb) break command add 3
+  Enter your debugger command(s). Type 'DONE' to end.
+  > p &Foo
+  > DONE
+  ```
+- 一些技巧
+  - 使用 `print` 命令可随时执行程序中的任意函数，并可与断点结合使用。
+  - 场景示例：需观察特定输入下的函数执行、未设断点却发现函数异常时，可先设断点，再用 `print` 调用该函数。
+  - 默认情况下，`print` 表达式执行会忽略所有断点。
+  - 可通过 LLDB 命令 `setting set target.process.ignore-breakpoints-in-expressions false` 关闭该默认行为。
+- LLDB中一个实用命令：**apropos**。
+- 使用方式：`apropos + 关键词`，可列出所有相关的 LLDB 命令。
+- 示例：`apropos stack` 会显示与栈相关的命令，如打印回溯、跳出当前帧、修改栈帧显示格式等。
 #### further
 - https://llvm.org/docs/OptBisect.html
 - https://llvm.org/docs/CommandGuide/llvm-reduce.htm
 - https://clang.llvm.org/docs/AddressSanitizer.html
+- https://llvm.org/docs/CommandGuide/llvm-reduce.html for the llvm-reduce CLI
+- https://llvm.org/docs/CommandGuide/bugpoint.html for the bugpoint CLI and https://llvm.org/docs/Bugpoint.html for its fancier use cases
+- https://llvm.org/docs/CommandGuide/llvm-extract.html for the llvm-extract CLI
+- https://llvm.org/docs/OptBisect.html for an explanation of how to use the opt-bisect-limit command-line option
+- For the sanitizers offered by Clang, please look at the related documentation pages:
+  - The address sanitizer: https://clang.llvm.org/docs/AddressSanitizer.html
+  - The thread sanitizer: https://clang.llvm.org/docs/ThreadSanitizer.html
+  - The memory sanitizer: https://clang.llvm.org/docs/MemorySanitizer.html
+  - The undefined behavior sanitizer: https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
+  - The dataflow sanitizer: https://clang.llvm.org/docs/DataFlowSanitizer.html
+  - The leak sanitizer: https://clang.llvm.org/docs/LeakSanitizer.html
+- https://lldb.llvm.org/use/tutorial.html
