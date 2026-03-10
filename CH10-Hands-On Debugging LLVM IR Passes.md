@@ -116,6 +116,29 @@ llc $@ -o - | grep 'bfi'
 - LLDB中一个实用命令：**apropos**。
 - 使用方式：`apropos + 关键词`，可列出所有相关的 LLDB 命令。
 - 示例：`apropos stack` 会显示与栈相关的命令，如打印回溯、跳出当前帧、修改栈帧显示格式等。
+- 默认情况下，LLVM 的 dump 方法仅在启用断言编译时可用。可通过设置 CMake 变量 LLVM_ENABLE_DUMP 为 on 或 off 来修改该行为。
+  ```
+  (lldb) p Instr
+  (llvm::Instruction &) 0x<snip>: {
+  llvm::User = {
+  llvm::Value = {
+  SubclassID = '6'
+  <snip>
+  (lldb) p Instr.dump()
+  %i = shl i32 5, 3
+  (lldb) p Instr.getType()
+  (llvm::Type *) 0x0000000137808c00
+  (lldb) p *Instr.getType()
+  (llvm::Type) {
+  Context = 0x000000016fdfeec8
+  <snip>
+  i32
+  (lldb) p Instr.getType()->dump()
+  ```
+- 可通过 `Instr.getFunction()` 或 `Instr.getParent()->getParent()` 获取对应函数实例，再调用 `dump` 方法打印该函数实例信息。
+- The debug-only option is only available when you build LLVM with assertions enabled
+- The string to use with the debug-only option can be found in the DEBUG_TYPE macro.
+-  For instance, the p Instr.getType()->print(dbgs(),0,0); (void)(dbgs() << '\n') LLDB command yields the same result as Instr.getType()->dump(). 
 #### further
 - https://llvm.org/docs/OptBisect.html
 - https://llvm.org/docs/CommandGuide/llvm-reduce.htm
