@@ -27,7 +27,7 @@
 
   <img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/7812ee2b-e255-4906-860f-dd3a185c4618" />
 
-- MC层的InstructionPrinter和MCCodeEmitter很多代码都是TableGen自动生成的。比如在目标架构的.td文件里定义指令的汇编格式和二进制编码规则，TableGen会根据这些定义生成对应的打印和编码逻辑，不用手动写大量重复的switch-case语句。ableGen 可自动生成 XXXInstPrinter、XXXMCCodeEmitter 类的大部分实现，但无法生成 XXXAsmParser 类。虽可通过回调扩展寄存器、指令描述，但相关解析方法仍需手动实现，XXXAsmParser 大量代码需自行编写。
+- MC层的InstructionPrinter和MCCodeEmitter很多代码都是TableGen自动生成的。比如在目标架构的.td文件里定义指令的汇编格式和二进制编码规则，TableGen会根据这些定义生成对应的打印和编码逻辑，不用手动写大量重复的switch-case语句。TableGen 可自动生成 XXXInstPrinter、XXXMCCodeEmitter 类的大部分实现，但无法生成 XXXAsmParser 类。虽可通过回调扩展寄存器、指令描述，但相关解析方法仍需手动实现，XXXAsmParser 大量代码需自行编写。
 
 #### further reading
 - https://developer.arm.com/documentation/ddi0487/latest/
