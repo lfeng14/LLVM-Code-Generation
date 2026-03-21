@@ -112,6 +112,19 @@
   	.section	".note.GNU-stack","",@progbits
   	.addrsig
   ```
+- h2blb asm parser
+  - 该后端支持的语法比指令章节中定义MC层的语法更简单。
+  - 不使用赋值运算符，采用更通用的汇编语法。
+  - 格式类似：`opcode def0,def1,src0,src1`。
+  - 所有操作数跟在操作码后，定义先于参数。
+- 语法解析完成后，需将解析器与 TargetMachine 实例关联：
+  - 为后端添加 AsmParser 库。
+  - 必须实现 `LLVMInitializeXXXAsmParser` 函数。
+  - 该函数由 `InitializeAllAsmParsers` 调用，供需要汇编解析功能的 LLVM 工具使用。
+- 只有需要传递到**MC层**的指令才必须进行编码。原因：机器层可能会使用**伪指令**（如 PHI、COPY 指令），以配合后端通用部分工作。
+- MCCodeEmitter class? The MCCodeEmitter class is responsible for translating an MCInst instance into a sequence of bytes. In other words, it is responsible for encoding the instructions
+- R格式：寄存器操作，如ADD X0, X1, X2；I格式：立即数操作，如ADDI X0, X1, #10；D格式：加载/存储，如LDR X0, [X1, #8]
+- 
 #### further reading
 - https://developer.arm.com/documentation/ddi0487/latest/
 ```
