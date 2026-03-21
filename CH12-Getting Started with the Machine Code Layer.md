@@ -21,8 +21,8 @@
   def s1 : Register<"s1">;
   ```
 - llvm-mc command-line tool, which is the LLVM-provided way for developers to test the MC layer of their backend.
-  - The human-readable assembly code printer: Represented by the MCInstrPrinter base class, this component is responsible for converting MCInst instances to human-readable strings.
-  - This component is represented by the Print arrow in Figure 12.2.The assembly code parser: Represented by the MCTargetAsmParser base class, this component is responsible for converting a human-readable string into an MCInst instance. This component is represented by the Parse arrow in Figure 12.2.
+  - The human-readable assembly code printer: Represented by the MCInstrPrinter base class, this component is responsible for converting MCInst instances to human-readable strings. This component is represented by the Print arrow in Figure 12.2.
+  - The assembly code parser: Represented by the MCTargetAsmParser base class, this component is responsible for converting a human-readable string into an MCInst instance. This component is represented by the Parse arrow in Figure 12.2.
   - The binary assembly code printer: Represented by the MCCodeEmitter base class, this component is responsible for converting MCInst instances to binary code. This component is represented by the Assemble arrow in Figure 12.2.
 
   <img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/7812ee2b-e255-4906-860f-dd3a185c4618" />
