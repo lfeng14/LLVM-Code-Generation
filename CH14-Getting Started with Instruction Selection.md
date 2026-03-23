@@ -28,7 +28,7 @@
   - **SDISel**逐块处理基本块：优先用**FastISel**，失败则由SDISel补全未选中部分。
   - 无对应选择器时，**回退路径失效**（如无FastISel则不尝试）。
 
-  <img width="1310" height="1084" alt="image" src="https://github.com/user-attachments/assets/62b0771d-536d-40b8-a519-6cad542c1970" />
+  <img width="650" height="500" alt="image" src="https://github.com/user-attachments/assets/62b0771d-536d-40b8-a519-6cad542c1970" />
 
 - 如果后端未提供两个主要选择器之一，代码生成器的 Pass 管理器将无法实例化 Pass 流水线，编译会立即失败。就像之前sme编译失败的
 - **指令选择（Instruction Selection）** 的 **回退机制**。
