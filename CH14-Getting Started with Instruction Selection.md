@@ -21,7 +21,7 @@
       - 一站式完成 IR 转换、合法化、选择，直接从 LLVM IR 生成机器指令 IR；
       - 编译速度更快，因此得名 FastISel。
 
-- 图14.1流程要点总结
+- 图1- 1流程要点总结
   - 菱形代表**条件判断**（是/否）。
   - 后端选用**GlobalISel**时，先由其选择LLVM IR函数。
   - 若**GlobalISel失败**，通过`ResetMachineFunction`重置状态，转由**SDISel**处理。
@@ -50,7 +50,7 @@
   - **GlobalISel**
       - 定位：**FastISel 与 SDISel 之间的平衡方案**
       - 特点：基础模式轻量快速，可叠加优化提升代码质量（对应 O0～O3 不同级别）；
-      - 性能：Apple GPU 后端表现与 SDISel 相当且快约 2 倍；AArch64 无回退时仅比 FastISel 慢 1.1～1.2 倍，速度竞争力强。
+      - 性能：Apple GPU 后端表现与 SDISel 相当且快约 2 倍；AArch64 无回退时仅比 FastISel 慢 - 1～- 2 倍，速度竞争力强。
 - 这段内容核心要点总结：
   - 示例中 `%i3`、`%i4` 是 `%arg1`、`%arg2` 经符号扩展（sext）得到，在 `bb` 块生成，却在 `bb5`、`bb6` 块使用。
   - 后端支持**宽位乘法**，可直接完成16位到32位的符号扩展，理想情况是直接匹配 `mul(sext i16 to i32, ...)` 生成对应指令。
@@ -83,3 +83,12 @@
     - **设计目标**：旨在消除 SDISel 的僵化与局限，是理想的指令选择框架。
     - **现存问题**：缺少实用功能（如适配函数作用域的领域专用语言、专用 TableGen 后端），优化能力不如 SDISel 丰富，存在使用短板。
     - **使用建议**：问题不构成阻碍，但使用体验仍不完善；追求**面向未来**且能接受不完美可选 GlobalISel，还可参与开源完善；追求**成熟稳定**则选 SDISel。
+- SDNode：表示 SDISel 中间表示（IR）中的一条指令。 SDValue：表示一条指令的其中一个结果，是对 SDNode 及其结果列表中对应索引的封装。
+- 
+#### further reading
+- 2015、2017、2019年LLVM开发者大会中**GlobalISel**相关的核心分享资源与内容脉络，是理解LLVM中SDISel与GlobalISel工作机制的重要参考，具体要点如下：
+  -  **资源指向**：明确了三届大会中GlobalISel主题的演讲幻灯片官方链接，且推荐搭配对应的YouTube录制视频观看，从多视角理解该技术。
+  -  **2015年（第九届，圣何塞）**：由苹果Quentin Colombet提出**GlobalISel设计提案**，核心针对传统SDISel（SelectionDAGISel）编译速度慢、作用域仅基本块、设计单一等缺陷，规划全新的全局指令选择框架以解决问题并提升代码生成能力。
+  -  **2017年（第十一届，圣何塞）**：Quentin Colombet与Ahmed Bougacha分享GlobalISel**发展现状与未来规划**，介绍了框架设计与基础设施的优化、性能特征，以及后续开发的重点方向和社区协作需求。
+  -  **2019年（圣何塞）**：SandersKeles带来《Generating Optimized Code with GlobalISel》分享，聚焦**基于GlobalISel生成优化代码**的相关实践与技术要点。
+  -  **资源价值**：这些大会分享不仅讲解SDISel和GlobalISel的工作原理，还呈现了LLVM社区对该技术的研发演进、实际落地思路，对相关技术学习和研究具有重要参考意义。
