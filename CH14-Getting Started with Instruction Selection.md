@@ -84,7 +84,29 @@
     - **现存问题**：缺少实用功能（如适配函数作用域的领域专用语言、专用 TableGen 后端），优化能力不如 SDISel 丰富，存在使用短板。
     - **使用建议**：问题不构成阻碍，但使用体验仍不完善；追求**面向未来**且能接受不完美可选 GlobalISel，还可参与开源完善；追求**成熟稳定**则选 SDISel。
 - SDNode：表示 SDISel 中间表示（IR）中的一条指令。 SDValue：表示一条指令的其中一个结果，是对 SDNode 及其结果列表中对应索引的封装。
-- 
+- 核心结构：SDISel 采用 DAG 表示，节点为操作，有向边代表依赖关系。三类依赖关系
+  - 数据依赖：源节点读取目标节点生成的值，为使用 - 定义链（与常规定义 - 使用链方向相反），是最常见依赖。
+  - 调度依赖：DAG 线性化时源节点需先于目标节点执行，用于约束指令执行顺序（如无法判定别名的加载、存储指令）。
+  - 粘连依赖：DAG 线性化时源、目标节点需紧邻，用于压缩指令序列、缩短物理寄存器活跃范围。
+  - 实现类：DAG 由SelectionDAG类实现，节点为SDNode及其子类，边为节点间指针，依赖类型由源节点值类型决定。
+
+- selection dag object：
+  ```
+  SelectionDAG has 9 nodes:
+    t0: ch,glue = EntryToken
+        t2: i16,ch = CopyFromReg t0, Register:i16 %0
+        t4: i16,ch = CopyFromReg t0, Register:i16 %1
+      t5: i16 = add t2, t4
+    # 该节点将加法结果t5存入物理寄存器 $r1，并输出新的链和 glue。其中glue是为了让后续使用该寄存器的节点（如下一行的 H2BLBISD::RETURN_GLUE）能够正确地与当前节点形成顺序依赖
+    t7: ch,glue = CopyToReg t0, Register:i16 $r1, t5
+    # 依赖t7.0 glue
+    t8: ch = H2BLBISD::RETURN_GLUE t7, Register:i16 $r1, t7:1
+  ```
+  - 通用操作码：llvm/include/llvm/CodeGen/ISDOpcodes.h
+- 节点会尽力缩进以直观展示父子依赖关系，子节点缩进层级高于父节点。
+  - 该缩进仅为尽力实现：若一个节点存在多个父节点，因节点只打印一次，缩进仅对首个打印的父节点有效。
+  - 注意：SDISel 中父子关系方向反转，使用者（父节点）指向其定义（子节点）。
+
 #### further reading
 - 2015、2017、2019年LLVM开发者大会中**GlobalISel**相关的核心分享资源与内容脉络，是理解LLVM中SDISel与GlobalISel工作机制的重要参考，具体要点如下：
   -  **资源指向**：明确了三届大会中GlobalISel主题的演讲幻灯片官方链接，且推荐搭配对应的YouTube录制视频观看，从多视角理解该技术。
