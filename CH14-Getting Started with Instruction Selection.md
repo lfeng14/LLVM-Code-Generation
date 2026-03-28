@@ -107,6 +107,15 @@
   - 该缩进仅为尽力实现：若一个节点存在多个父节点，因节点只打印一次，缩进仅对首个打印的父节点有效。
   - 注意：SDISel 中父子关系方向反转，使用者（父节点）指向其定义（子节点）。
 
+- EVT class represents your types, the SDNode class your instructions, and the SDValue class a particular result of your instruction。
+- MachineInstr实例的操作码可使用带**G_前缀**的通用Machine IR操作码，易于识别。例：通用加法指令对应**G_ADD**操作码。此类操作码定义在文件：**llvm/include/llvm/Target/GenericOpcodes.td**。
+  - %0:gpr32 → 普通虚拟寄存器，已指定寄存器类 gpr32。
+  - %1:gpr32(s32) → 带标量类型（32位）的虚拟寄存器。
+  - %2:_(p0) → 通用虚拟寄存器，无寄存器类/组，类型为地址空间0的指针。
+  - %3:gprb(<2 x s16>) → 使用寄存器组 gprb，类型为 <2 x s16> 向量。
+
+<img width="1326" height="754" alt="image" src="https://github.com/user-attachments/assets/a112f445-fef5-486e-8c0b-da4e6b9c72ce" />
+
 #### further reading
 - 2015、2017、2019年LLVM开发者大会中**GlobalISel**相关的核心分享资源与内容脉络，是理解LLVM中SDISel与GlobalISel工作机制的重要参考，具体要点如下：
   -  **资源指向**：明确了三届大会中GlobalISel主题的演讲幻灯片官方链接，且推荐搭配对应的YouTube录制视频观看，从多视角理解该技术。
