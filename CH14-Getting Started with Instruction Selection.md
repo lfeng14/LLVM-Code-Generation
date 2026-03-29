@@ -116,10 +116,12 @@
 
 <img width="1326" height="754" alt="image" src="https://github.com/user-attachments/assets/a112f445-fef5-486e-8c0b-da4e6b9c72ce" />
 
+- If you need help finding the method to override or anything else, feel free to look at the example at the commit tagged connect-tgtinfo-apis_ch14 in the companion repository
+- respectively, the global-isel and the fast-isel command-line options. For instance, the -fast-isel=0 option will disable FastISel altogether.
+- You can change this setting using the global-isel-abort command-line option with 0 to fall back silently, 1 to abort on fallbacks, and 2 to emit the warning.
+- You learned the specificities of the generic IR used by each selector, namely the SelectionDAG representation for SDISel and the generic Machine IR for GlobalISel, and discovered which APIs to use to manipulate these IRs
+
 #### further reading
-- 2015、2017、2019年LLVM开发者大会中**GlobalISel**相关的核心分享资源与内容脉络，是理解LLVM中SDISel与GlobalISel工作机制的重要参考，具体要点如下：
-  -  **资源指向**：明确了三届大会中GlobalISel主题的演讲幻灯片官方链接，且推荐搭配对应的YouTube录制视频观看，从多视角理解该技术。
-  -  **2015年（第九届，圣何塞）**：由苹果Quentin Colombet提出**GlobalISel设计提案**，核心针对传统SDISel（SelectionDAGISel）编译速度慢、作用域仅基本块、设计单一等缺陷，规划全新的全局指令选择框架以解决问题并提升代码生成能力。
-  -  **2017年（第十一届，圣何塞）**：Quentin Colombet与Ahmed Bougacha分享GlobalISel**发展现状与未来规划**，介绍了框架设计与基础设施的优化、性能特征，以及后续开发的重点方向和社区协作需求。
-  -  **2019年（圣何塞）**：SandersKeles带来《Generating Optimized Code with GlobalISel》分享，聚焦**基于GlobalISel生成优化代码**的相关实践与技术要点。
-  -  **资源价值**：这些大会分享不仅讲解SDISel和GlobalISel的工作原理，还呈现了LLVM社区对该技术的研发演进、实际落地思路，对相关技术学习和研究具有重要参考意义。
+- https://www.llvm.org/devmtg/2015-10/slides/Colombet-GlobalInstructionSelection.pdf
+- https://llvm.org/devmtg/2017-10/slides/Bougacha-Colombet-GlobalISel.pdf
+- https://llvm.org/devmtg/2019-10/slides/SandersKeles-GeneratingOptimizedCodewithGlobalISel.pdf
