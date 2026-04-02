@@ -114,7 +114,7 @@
   - %2:_(p0) → 通用虚拟寄存器，无寄存器类/组，类型为地址空间0的指针。
   - %3:gprb(<2 x s16>) → 使用寄存器组 gprb，类型为 <2 x s16> 向量。
 
-<img width="1326" height="754" alt="image" src="https://github.com/user-attachments/assets/a112f445-fef5-486e-8c0b-da4e6b9c72ce" />
+<img width="650" height="375" alt="image" src="https://github.com/user-attachments/assets/a112f445-fef5-486e-8c0b-da4e6b9c72ce" />
 
 - If you need help finding the method to override or anything else, feel free to look at the example at the commit tagged connect-tgtinfo-apis_ch14 in the companion repository
 - respectively, the global-isel and the fast-isel command-line options. For instance, the -fast-isel=0 option will disable FastISel altogether.
