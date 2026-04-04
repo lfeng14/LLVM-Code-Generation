@@ -288,10 +288,26 @@
     - 因为它的目标就是“快”。它不打算做复杂的寄存器合并（Coalescing）或者指令调度（Scheduling）。在 `fastLowerArguments` 里直接把物理寄存器 `COPY` 到虚拟寄存器，虽然会产生很多指令，但这种简单的线性逻辑极大地缩短了编译时间，非常适合调试模式（`-O0`）。
 - FastISel 是 SDISel（选择 DAG 指令选择器）的子模块又有差异，必须遵循 SDISel 的规范处理函数形参的物理寄存器。
 - fastisel-abi-skeleton_ch15, fastisel-ret-val_ch15, and fastisel-abi-arg-val_ch15 for the steps that lead to partial but functional support of the lowering of the ABI.
-- last instruction selection framewor, global isel: need to override the following four methods: lowerFormalArguments,
-lowerReturn, lowerCall, and canLowerReturn.
+- last instruction selection framewor, global isel: need to override the following four methods: lowerFormalArguments, lowerReturn, lowerCall, and canLowerReturn. The Booleans returned by the lowerXXX methods of the CallLowering class determine whether the IRTranslator pass will succeed or not. This means that if, during a run of the IRTranslator pass, one of these methods returns false, then the whole IRTranslator pass will report a failure, and depending on how your fallback mechanism is configured, this will lead to either a fatal error or a fallback to SDISel.
+
+- GlobalISel: CallLowering 设计逻辑
+  - 核心解耦：决策与执行：GlobalISel 将 ABI 处理拆分为两个独立角色，实现了“算位置”与“搬数据”的彻底分离：
+  - **Assigner（大脑/决策）**：继承自 `ValueAssigner`。负责查表（ABI 规则）并决定每个参数的物理位置（哪个寄存器或哪个栈偏移）。它只做 **决策**，不生成指令。
+  - **Handler（双手/执行）**：继承自 `ValueHandler`。负责将 Assigner 的决定 **物化（Materialize）** 为具体的通用机器指令（`G_COPY`、`G_LOAD` 等）。
+  - 坐标系：数据流向 (Context-based Flow)
+    - 理解 `Incoming` 与 `Outgoing` 的唯一标准是：**以当前函数为中心，看数据是“进来”还是“出去”。**
+
+    | 分类 | 定义 | 典型场景 |
+    | :--- | :--- | :--- |
+    | **Incoming (流入)** | 数据进入当前函数上下文 | **被调用者**接收参数；**调用者**接收返回值。 |
+    | **Outgoing (流出)** | 数据离开当前函数上下文 | **调用者**发送参数；**被调用者**发送返回值。 |
+
+- We start by checking if our return value can be returned directly, and if not we demote it to an additional pointer parameter using the insertSRetIncomingArgument method. The SplitArgs variable will in the end contain the list of all the low-level arguments, meaning that it represents the expanded list of arguments when you split the arguments that do not fit in one location (remember the 64-bit to two 32-bit registers example。
+- The other target hooks follow the same principles and should be no problem for you! As always, go check the companion repository if you get stuck!
 #### further reading
 - aarch64调用约定：https://github.com/jeandle/jeandle-llvm/blob/main/llvm/lib/Target/AArch64/AArch64CallingConvention.td
 - aapcs64调用约定：https://github.com/ARM-software/abi-aa/releases/download/2024Q3/aapcs64.pdf
 - LowerFormalArguments：https://github.com/llvm/llvm-project/blob/97dbf38c9c495ce9fb958137957cb7794ef3285b/llvm/lib/Target/AArch64/AArch64ISelLowering.cpp#L8818
 - 像 Linux 内核的 Documentation 目录里，从架构细节到驱动开发都有详细文档，还有 Git 的官方文档，从基础命令到内部实现原理都讲得很透。另外，PostgreSQL 的文档也很全面，从 SQL 语法到数据库内核架构都有覆盖。你平时更关注编译器相关的项目，还是其他领域的？那可以试试看看 Redis 的文档，它把数据结构、持久化机制这些核心原理讲得很通俗，还有 WebKit 的文档，对浏览器渲染引擎的细节解释得很到位，这两个项目的文档和 LLVM 一样，都属于 “能让自学党啃明白” 的类型。
+- https://github.com/PacktPublishing/LLVM-Code-Generation-by-example/blob/main/llvm/lib/Target/H2BLB/GISel/H2BLBCallLowering.cpp
+- https://llvm.org/docs/WritingAnLLVMBackend.html#calling-conventions
