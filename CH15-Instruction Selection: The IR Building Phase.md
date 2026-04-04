@@ -193,7 +193,103 @@
   - 如果你想改变 **参数放在哪个寄存器**，去改 `.td` 文件里的调用约定；
   - 如果你想改变 **如何从特殊内存里读取参数**，去改 `LowerFormalArguments` 里的 `Load` 指令生成逻辑。
   - 你是在为你自研的 NPU 定义新的寄存器类吗？如果是的话，你可能需要先修改 TableGen 文件，然后再去 `LowerFormalArguments` 里处理这些新寄存器的拷贝逻辑。
-
+- 在 LLVM 中，函数参数不是直接从物理寄存器拿来用的，而是先注册为函数的 Live-In，通过虚拟寄存器进行逻辑桥接，最后由系统统一生成拷贝指令。不要过早地生成具体的汇编指令，而是先建立逻辑联系，把决定权交给更有全局观的寄存器分配器和调度器。
+- Next comes the type of the node, which is represented with this SDTypeProfile TableGen class: SDTypeProfile<0, -1, [SDTCisPtrTy<0>]>. The first argument of SDTypeProfile is the number of explicit results for the current node, so no result here – everything is implicitly returned. The second argument is the number of arguments of the node and -1 means that this is variadic. This variadic number of arguments is because, unlike the results, we need to pass the arguments to the call instruction explicitly in the SDISel IR. The third argument is a list of constraints that must be matched by the operands of the node. Here, SDTCisPtrTy<0> means that the 0th operand, hence the first argument of the variadic list of arguments, must be a pointer type. This is because a call must have a target function and that target function is an address to where this function resides in the final binary, hence a pointer.
+  - SDNPHasChain: This node takes a chain as input and produces a chain as output (chains do not count toward the number of results).
+  - SDNPOptInGlue: This node optionally takes a glue as input. This glue is used to make sure the instructions related to the ABI lowering are next to the call and it is optional because calls with no argument have nothing to stick with.
+  - SDNPOutGlue: This node produces a glue. This glue can be used by the instructions related to the ABI lowering for retrieving the returned value to make sure they are next to the call.
+  - SDNPVariadic: This node has a variable number of arguments.
+  ```
+  def H2BLBcall : SDNode<"H2BLBISD::CALL",
+      SDTypeProfile<0, -1, [SDTCisPtrTy<0>]>,
+      [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue,
+      SDNPVariadic]>;
+  ```
+- 生成一个带控制链和强制顺序粘合值的自定义调用指令，并提取粘合值，确保后续指令严格按顺序执行，不被编译器优化重排。
+  ```
+  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
+  Chain = DAG.getNode(H2BLBISD::CALL, DL, NodeTys, Ops);
+  InGlue = Chain.getValue(1);
+  ```
+- 尾调用(TC) 不用压栈，因为压栈的目的是 保存上下文，但是尾调用 结束后已经不需要这个上下文了，所以不涉及压栈；
+- add-callconv-stack_ch15 to see how to add the support for stack locations,
+- add-callconv-vector_ch15 to see how to add support for locations that goes beyond the LocInfo::Full support,
+- sdisel-sret-demot_ch15 to see how to enable sret demotion,
+- sdisel-call-lowering_ch15 to see how to add the lowering of calls,
+- sdisel-lowerret_ch15 to see how to add the lowering of returns,
+- sdisel-call-lowering-stack_ch15 to see how to add stack location support for the lowering of calls.
+- 结构体降级：You saw a concrete example of how to do that for the lowering of the formal arguments and learned about the concept of sret demotion in the process
+- `H2BLBFastISel` 代码片段进行的注释说明。
+  
+  ```cpp
+  bool H2BLBFastISel::fastLowerArguments() {
+    if (!FuncInfo.CanLowerReturn)
+      return false;
+      
+    const Function *F = FuncInfo.Fn;
+    CallingConv::ID CC = F->getCallingConv();
+    // ... 检查调用约定支持情况
+    
+    const DataLayout &DL = F->getDataLayout();
+    
+    // 【区别 1：遍历方式】
+    // SDISel: 通常在 LowerFormalArguments 中一次性处理所有参数，并返回一个完整的 SDValue 列表。
+    // FastISel: 逐个参数进行线性扫描和处理，逻辑更直观，但不具备全局视图。
+    for (const Argument &Arg : F->args()) {
+      Type *ArgTy = Arg.getType();
+      // ... 类型检查
+      
+      MachineFunction &MF = *FuncInfo.MF;
+      
+      // 【核心区别 2：物化时机 (Materialization)】
+      // SDISel: 不会立即生成指令，而是创建 CopyFromReg 节点并调用 addLiveIn 建立映射，
+      //        直到整个 DAG 构建完成后，才统一物化拷贝指令。
+      // FastISel: “走一步看一步”。在这里它直接开始生成 MachineInstr。
+      for (const Argument &Arg : F->args()) {
+        Register SrcPhysReg;
+        const TargetRegisterClass *DstRC;
+        // ... 确定物理寄存器 SrcPhysReg 和目标寄存器类 DstRC
+        
+        // 【区别 3：寄存器映射路径】
+        // SDISel 需要通过逻辑映射（VReg <-> PhysReg）来给寄存器分配器留出合并空间。
+        // FastISel 则是直接将物理寄存器声明为 LiveIn 并关联一个 VReg。
+        Register SrcReg = MF.addLiveIn(SrcPhysReg, DstRC);
+        
+        // 【关键区别 4：直接发射 MachineInstr】
+        // 这是 FastISel 极速的原因：它跳过了 DAG 节点（SDNode）的创建、合法化、优化过程。
+        // 它直接调用 BuildMI 在当前的 MachineBasicBlock 中插入一条真实的寄存器拷贝指令。
+        Register ResultReg = createResultReg(DstRC);
+        BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, MIMD, TII.get(TargetOpcode::COPY),
+                ResultReg)
+          .addReg(SrcReg, getKillRegState(true));
+        
+        // 【区别 5：值映射维护】
+        // SDISel: 将处理好的值放入 InVals 列表返回给调用者。
+        // FastISel: 直接更新本地的 ValueMap，将 IR 层的 Argument 映射到刚生成的 ResultReg 上。
+        // 后续的 FastISel 指令如果用到这个 Argument，会直接从 ValueMap 取出这个寄存器使用。
+        updateValueMap(&Arg, ResultReg);
+      }
+      
+      return true;
+    }
+  }
+  ```
+  - fast isel vs sdg isel 对比总结
+    
+    | 特性 | SelectionDAG ISel (SDISel) | Fast ISel |
+    | :--- | :--- | :--- |
+    | **中间表示** | **SDNode (DAG 图)**：先构建图，再进行合法化和优化。 | **MachineInstr (MI)**：直接从 IR 生成目标机器指令。 |
+    | **处理粒度** | **基本块级**：拥有整个基本块的全局视图。 | **指令级**：局部处理，不支持跨指令的复杂优化。 |
+    | **寄存器拷贝** | **延迟物化**：通过 `CopyFromReg` 占位，最后统一生成。 | **即时发射**：直接 `BuildMI` 生成 `COPY` 指令。 |
+    | **性能/质量** | **慢而精**：生成的代码质量高（如寄存器合并更优）。 | **快而粗**：生成速度极快，但包含大量冗余拷贝。 |
+    | **回退机制** | 是最终的兜底方案，必须实现。 | 如果遇到不支持的复杂类型，会立即 `return false` 转向 SDISel。 |
+    
+  - **为什么 FastISel 敢这么写？**
+    - 因为它的目标就是“快”。它不打算做复杂的寄存器合并（Coalescing）或者指令调度（Scheduling）。在 `fastLowerArguments` 里直接把物理寄存器 `COPY` 到虚拟寄存器，虽然会产生很多指令，但这种简单的线性逻辑极大地缩短了编译时间，非常适合调试模式（`-O0`）。
+- FastISel 是 SDISel（选择 DAG 指令选择器）的子模块又有差异，必须遵循 SDISel 的规范处理函数形参的物理寄存器。
+- fastisel-abi-skeleton_ch15, fastisel-ret-val_ch15, and fastisel-abi-arg-val_ch15 for the steps that lead to partial but functional support of the lowering of the ABI.
+- last instruction selection framewor, global isel: need to override the following four methods: lowerFormalArguments,
+lowerReturn, lowerCall, and canLowerReturn.
 #### further reading
 - aarch64调用约定：https://github.com/jeandle/jeandle-llvm/blob/main/llvm/lib/Target/AArch64/AArch64CallingConvention.td
 - aapcs64调用约定：https://github.com/ARM-software/abi-aa/releases/download/2024Q3/aapcs64.pdf
