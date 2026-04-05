@@ -143,6 +143,110 @@ computeRegisterProperties(Subtarget.getRegisterInfo());
    getLegacyLegalizerInfo().computeTables();
  }
  ```
+- 在 GlobalISel 的设计语境下，它并不直接说指令是“合法”还是“不合法”，而是给指令贴上一个动作标签（Action）。
+ - 逻辑拆解
+    - **检查条件**：是一个 32 位的标量乘法吗？（`!isVector() && Size == 32`）
+    - **如果是 (True)**：把这个指令标记为 **`Custom`**。
+    - **后续动作**：一旦被标记为 `Custom`，通用合法化工具（LegalizerHelper）就会停下手中的活，转而调用你重写的 `legalizeCustom` 函数。
+   
+  - 这不是“不合法”，而是“我要亲自打磨”
+    在 `LegalizerInfo` 中，有几种常见的标签：
+    - **`Legal`**：硬件直接支持，直接过。
+    - **`Lower`**：硬件不支持，请编译器用更简单的指令（如 `ADD`/`SUB`）帮我拆了。
+    - **`LibCall`**：硬件不支持，请帮我生成一个函数调用（如 `__mulsi3`）。
+    - **`Custom`**：**“离远点，这事儿只有我（后端开发者）知道怎么弄最快/最对。”**
+  
+  - 为什么 32 位乘法经常需要 `Custom`？
+    在高性能计算（HPC）或特定的嵌入式架构中，32 位乘法经常是“特例”：
+    - **结果溢出**：硬件可能提供一个指令，同时产出高 32 位和低 32 位，这需要你手动分配两个寄存器。
+    - **特定的优化**：比如你的 `H2BLB` 架构可能在特定条件下（如其中一个操作数是常量）使用更高效的 `Shift + Add` 序列，而不是通用的乘法。
+    - **NaN 处理（呼应你之前的问题）**：如果你需要对乘法结果进行严苛的 `NaN` 检查，`Custom` 逻辑允许你在生成乘法指令后，紧接着插入一段检查逻辑。
+  ```
+   getActionDefinitionsBuilder(TargetOpcode::G_MUL)
+   .customIf([=](const LegalityQuery &Query) {
+    const auto &DstTy = Query.Types[0];
+    return !DstTy.isVector() && DstTy.getSizeInBits() == 32;
+   });
+   bool H2BLBLegalizerInfo::legalizeCustom(
+   LegalizerHelper &Helper, MachineInstr &MI,
+   LostDebugLocObserver &LocObserver) const {
+     MachineIRBuilder &MIRBuilder = Helper.MIRBuilder;
+     MachineRegisterInfo &MRI = *MIRBuilder.getMRI();
+     GISelChangeObserver &Observer = Helper.Observer;
+     switch (MI.getOpcode()) {
+     ...
+     case TargetOpcode::G_MUL:
+     return legalizeMul(MI, MRI, MIRBuilder, Observer);
+     }
+     llvm_unreachable("expected switch to return");
+   }
+  getActionDefinitionsBuilder(TargetOpcode::G_MUL)
+  .customIf([=](const LegalityQuery &Query) {
+   const auto &DstTy = Query.Types[0];
+   return !DstTy.isVector() && DstTy.getSizeInBits() == 32;
+  });
+  bool H2BLBLegalizerInfo::legalizeCustom(
+  LegalizerHelper &Helper, MachineInstr &MI,
+  LostDebugLocObserver &LocObserver) const {
+    MachineIRBuilder &MIRBuilder = Helper.MIRBuilder;
+    MachineRegisterInfo &MRI = *MIRBuilder.getMRI();
+    GISelChangeObserver &Observer = Helper.Observer;
+    switch (MI.getOpcode()) {
+    ...
+    case TargetOpcode::G_MUL:
+    return legalizeMul(MI, MRI, MIRBuilder, Observer);
+    }
+    llvm_unreachable("expected switch to return");
+  }
+  // 自定义处理 G_MUL 指令的合法化函数
+  bool H2BLBLegalizerInfo::legalizeMul(MachineInstr &MI, MachineRegisterInfo &MRI,
+                                      MachineIRBuilder &MIRBuilder,
+                                      GISelChangeObserver &Observer) const {
+    // 确保传入的确实是通用乘法指令 G_MUL
+    assert(MI.getOpcode() == TargetOpcode::G_MUL);
+  
+    // 获取左操作数（LHS）的虚拟寄存器
+    Register LHS = MI.getOperand(1).getReg();
+    Register PlainLHS;
+    bool isSigned = false; // 默认视为无符号乘法
+  
+    // ... (省略部分逻辑)
+  
+    // 核心逻辑：模式匹配 (Instruction Matching)
+    // 检查操作数是否是通过 G_SEXT (带符号扩展) 得到的
+    // 如果两个操作数都是从较窄类型扩展而来的，我们可以使用硬件的“加宽乘法”指令
+    if (mi_match(LHS, MRI, m_GSExt(m_Reg(PlainLHS))) &&
+        mi_match(RHS, MRI, m_GSExt(m_Reg(PlainRHS))))
+      isSigned = true; // 匹配到带符号扩展，标记为有符号
+  
+    // ... (省略部分逻辑)
+  
+    // 获取目标指令信息 (TII) 以访问硬件指令描述
+    const TargetInstrInfo &TII = *ST.getInstrInfo();
+  
+    // 根据匹配结果选择硬件指令：有符号加宽乘法 (SMUL) 或 无符号加宽乘法 (UMUL)
+    unsigned Opcode = isSigned ? H2BLB::WIDENING_SMUL : H2BLB::WIDENING_UMUL;
+  
+    // --- 开始修改指令 ---
+    // 必须通知观察者：我们要开始修改这条指令了 (GISel 增量更新要求)
+    Observer.changingInstr(MI);
+  
+    // 将通用的 G_MUL 变更为目标机器特有的 Opcode
+    // 这实际上是将“合法化”和“指令选择”的一部分提前合并完成了
+    MI.setDesc(TII.get(Opcode));
+  
+    // ... (针对 Opcode 调整操作数等逻辑)
+  
+    // 约束寄存器：确保该指令的虚拟寄存器符合目标硬件的 Register Bank 和寄存器类要求
+    constrainSelectedInstRegOperands(MI, TII, *MRI.getTargetRegisterInfo(),
+                                     *ST.getRegBankInfo());
+  
+    // 通知观察者：指令修改完成，触发后续的 Worklist 更新
+    Observer.changedInstr(MI);
+  
+    return true; // 返回 true 表示自定义合法化成功，不再执行默认流程
+  }
+  ```
 #### further reading
 - AMDGPU legalization: llvm/lib/Target/AMDGPU/AMDGPULegalizerInfo.cpp
 - Aarch64 legalization: llvm/lib/Target/AArch64/GISel/AArch64LegalizerInfo.cpp file
