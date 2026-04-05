@@ -97,7 +97,52 @@ computeRegisterProperties(Subtarget.getRegisterInfo());
   - **C. 动态逻辑 (Predicates with Lambdas)**
   这是 GlobalISel 的杀手锏。你可以通过 `lowerIf` 或 `legalIf` 传入一个 **Lambda 表达式**。比如你的代码中：如果类型是标量且寄存器类型与内存类型不一致，就执行 `lower`（将其展开为更基础的指令）。这种基于逻辑判断的合法化在 SDISel 中很难写得这么优雅。
 
-
+ ```
+ // H2BLB 架构合法化器的构造函数
+ H2BLBLegalizerInfo::H2BLBLegalizerInfo(const H2BLBSubtarget &ST) : ST(ST) {
+   
+   // 定义指针类型 p0：地址空间为 0，宽度为 16 位（暗示该架构地址线为 16 位）
+   const LLT p0 = LLT::pointer(0, 16);
+   // 假设上下文中已定义 s8, s16, s32 分别为 8, 16, 32 位的标量类型
+ 
+   // 1. 获取 G_LOAD (加载) 和 G_STORE (存储) 指令的规则构建器
+   getActionDefinitionsBuilder({TargetOpcode::G_LOAD, TargetOpcode::G_STORE})
+     
+     // 2. 显式声明硬件原生支持的组合：{寄存器类型, 指针类型, 内存类型, 对齐位宽}
+     .legalForTypesWithMemDesc({
+       {s8, p0, s8, 8},   // 8位加载/存储：寄存器 s8 <-> 内存 8bit
+       {s16, p0, s8, 8},  // 扩展加载/截断存储：寄存器 s16 <-> 内存 8bit
+       {s16, p0, s16, 8}, // 16位加载/存储：寄存器 s16 <-> 内存 16bit (字节对齐即可)
+       {s32, p0, s32, 8}  // 32位加载/存储：寄存器 s32 <-> 内存 32bit
+     })
+ 
+     // 3. 约束标量范围：强制要求索引 0 的类型（寄存器类型）必须在 s16 到 s32 之间
+     // 如果不在范围内（如 s8 或 s64），框架会自动尝试 Widen (提升) 或 Narrow (拆分)
+     .clampScalar(0, s16, s32)
+ 
+     // 4. 动态降级规则：如果寄存器类型与内存类型不匹配（且未在 legal 中定义）
+     // 例如：用 s32 寄存器去读内存中的 s16，但上面没写这条规则，则执行 lower (拆解)
+     .lowerIf([=](const LegalityQuery &Query) {
+       return Query.Types[0].isScalar() &&
+              Query.Types[0] != Query.MMODescrs[0].MemoryTy;
+     })
+ 
+     // 5. 动态合法性判断：再次确认，只要位宽是 16 或 32 位，就视为合法
+     .legalIf([=](const LegalityQuery &Query) {
+       TypeSize Size = Query.Types[0].getSizeInBits();
+       return Size == 16 || Size == 32;
+     })
+ 
+     // 6. 向量平铺：如果传入的是向量类型（如 <2 x s16>），将其拆解为多个标量操作
+     .scalarize(0)
+ 
+     // 7. 兜底方案：如果以上所有规则都不匹配，则将该指令执行 lower (展开/降级)
+     .lower();
+ 
+   // 核心步骤：将上述流式声明的规则编译成内部查找表，优化编译器的匹配效率
+   getLegacyLegalizerInfo().computeTables();
+ }
+ ```
 #### further reading
 - AMDGPU legalization: llvm/lib/Target/AMDGPU/AMDGPULegalizerInfo.cpp
 - Aarch64 legalization: llvm/lib/Target/AArch64/GISel/AArch64LegalizerInfo.cpp file
