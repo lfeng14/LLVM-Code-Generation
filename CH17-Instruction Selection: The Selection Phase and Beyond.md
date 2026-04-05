@@ -1,1 +1,2 @@
-
+- Before we get to the instruction selection phase, we need to address the **RegBankSelect pass**, which is a mandatory phase for GlobalISel between the legalization and the instruction selection phase.
+- 1. 什么是“寄存器库”（Register Bank）？在现代 CPU 中，寄存器并不是一块铁板，而是分成不同的“零件库”：GPR (通用寄存器库)：专门处理整数运算、地址计算（比如循环变量 i）。FPR/VR (浮点/向量寄存器库)：专门处理大规模科学计算、多媒体数据（比如你之前提到的 AlphaFold3 里的向量运算）。问题在于： 这两个库在物理上往往是分开的。如果你想把一个在 GPR 里的整数传给浮点运算单元，CPU 必须执行一条专门的“搬运指令”（Cross-register bank copy）
