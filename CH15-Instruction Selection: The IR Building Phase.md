@@ -44,7 +44,7 @@
   ```
 - When you call a function, you need three pieces of information: where its arguments need to be, where its results need to be, and which registers are preserved by this function call, meaning which registers can live through the call of the function without being clobbered.
 
-- CCValAssign: Therefore, the original type is i8 but the actual type is i32. You can get this information through the getValVT method for the original type and getLocVT for the actual type
+- CCValAssign: Therefore, the original type is i8 but the actual type is i- You can get this information through the getValVT method for the original type and getLocVT for the actual type
 - 使用SDISel降低ABI，需实现**目标专用TargetLowering类**的4个核心方法。
   - 必须实现的方法：**LowerFormalArguments、LowerReturn、LowerCall、CanLowerReturn**。
   - 假设代码如下：
@@ -124,18 +124,18 @@
         // 这里通常会有一个 switch(RegVT.getSizeInBits()) ...
         ... 
   
-        // 1. 创建一个虚拟寄存器 (VReg)，用于在函数内部代表这个参数
+        // - 创建一个虚拟寄存器 (VReg)，用于在函数内部代表这个参数
         Register VReg = RegInfo.createVirtualRegister(DstRC);
         
-        // 2. 告诉寄存器分配器：在函数入口处，物理寄存器 (VA.getLocReg()) 的值是有效的（Live-In）
+        // - 告诉寄存器分配器：在函数入口处，物理寄存器 (VA.getLocReg()) 的值是有效的（Live-In）
         // 并将其与我们刚创建的虚拟寄存器 VReg 关联起来
         RegInfo.addLiveIn(VA.getLocReg(), VReg);
   
-        // 3. 在 DAG 图中创建一个“拷贝”节点：从虚拟寄存器读取值
+        // - 在 DAG 图中创建一个“拷贝”节点：从虚拟寄存器读取值
         // 这个 ArgValue 就是后续 IR 逻辑真正使用的“变量”节点
         SDValue ArgValue = DAG.getCopyFromReg(Chain, DL, VReg, RegVT);
   
-        // 4. 将处理好的参数节点放入结果数组中，返回给 LLVM 核心
+        // - 将处理好的参数节点放入结果数组中，返回给 LLVM 核心
         InVals.push_back(ArgValue);
   
       } else {
@@ -304,10 +304,117 @@
 
 - We start by checking if our return value can be returned directly, and if not we demote it to an additional pointer parameter using the insertSRetIncomingArgument method. The SplitArgs variable will in the end contain the list of all the low-level arguments, meaning that it represents the expanded list of arguments when you split the arguments that do not fit in one location (remember the 64-bit to two 32-bit registers example。
 - The other target hooks follow the same principles and should be no problem for you! As always, go check the companion repository if you get stuck!
-#### further reading
+#- further reading
 - aarch64调用约定：https://github.com/jeandle/jeandle-llvm/blob/main/llvm/lib/Target/AArch64/AArch64CallingConvention.td
 - aapcs64调用约定：https://github.com/ARM-software/abi-aa/releases/download/2024Q3/aapcs64.pdf
 - LowerFormalArguments：https://github.com/llvm/llvm-project/blob/97dbf38c9c495ce9fb958137957cb7794ef3285b/llvm/lib/Target/AArch64/AArch64ISelLowering.cpp#L8818
 - 像 Linux 内核的 Documentation 目录里，从架构细节到驱动开发都有详细文档，还有 Git 的官方文档，从基础命令到内部实现原理都讲得很透。另外，PostgreSQL 的文档也很全面，从 SQL 语法到数据库内核架构都有覆盖。你平时更关注编译器相关的项目，还是其他领域的？那可以试试看看 Redis 的文档，它把数据结构、持久化机制这些核心原理讲得很通俗，还有 WebKit 的文档，对浏览器渲染引擎的细节解释得很到位，这两个项目的文档和 LLVM 一样，都属于 “能让自学党啃明白” 的类型。
 - https://github.com/PacktPublishing/LLVM-Code-Generation-by-example/blob/main/llvm/lib/Target/H2BLB/GISel/H2BLBCallLowering.cpp
 - https://llvm.org/docs/WritingAnLLVMBackend.html#calling-conventions
+
+- H2BLBCallLowering.cpp source code defines part of a backend implementation for the LLVM GlobalISel framework, specifically for lowering function calls and arguments for a custom target called `H2BLB`. LLVM's GlobalISel is a framework for translating LLVM intermediate representation (IR) into machine-level instructions. The file in question, `H2BLBCallLowering.cpp`, implements the handling of function calls, arguments, and return values in this process.
+
+- **Key Components**
+The code defines a class `H2BLBCallLowering` and supporting structures and functions to handle the following tasks:
+  - **Lower returns**: Convert LLVM return operations (IR) to machine code return instructions.
+  - **Lower formal arguments**: Handle incoming function arguments during a function declaration.
+  - **Lower calls**: Process function calls by assigning registers or stack locations for arguments and managing the call sequence.
+
+---
+
+- **Detailed Explanation**
+  
+  - **File Overview**
+    - The file is implemented as part of LLVM's custom target backend for the `H2BLB` architecture.
+    - The main class `H2BLBCallLowering` inherits from LLVM's `CallLowering` and defines methods to convert LLVM IR-level function calls and arguments into target-specific machine code.
+    - Supporting utility classes (`H2BLBIncomingValueAssigner`, `H2BLBOutgoingValueAssigner`, etc.) assist in this translation by assigning registers, handling stack usage, and generating call instructions.
+  
+  ---
+  
+  - **`H2BLBCallLowering::lowerReturn`**
+  This method lowers a function's return statement from LLVM IR into machine instructions.
+  
+    - **Key Points:**
+      - If there is a return value (`Val`), it may involve splitting the return value into smaller components (e.g., struct splitting) using `ComputeValueVTs`.
+      - Handles arguments that can't be moved directly via registers:
+        - Uses `insertSRetStores` to store return values into memory (`SRet` refers to "struct return") if the return value is too large.
+      - Calls `determineAndHandleAssignments` to assign values to appropriate registers (or memory locations) for the return instruction.
+      - Generates a pseudo return machine instruction `H2BLB::RET_PSEUDO` instead of the actual return instruction for compatibility with the backend at the intermediate stage.
+  
+  ---
+  
+  - **`H2BLBCallLowering::lowerFormalArguments`**
+  This function handles the lowering of incoming function arguments when defining or declaring a function.
+  
+    - **Key Points:**
+      - For each argument of the function:
+        - Sets flags (`ArgFlags`) based on the argument's attributes (e.g., alignment, pointer type).
+        - Splits complex arguments (e.g., structs or arrays) into multiple smaller arguments to fit register-based or stack-based calling conventions.
+      - Uses `FormalArgHandler` to assign arguments to physical registers or stack slots.
+      - Arguments are assigned based on the custom calling convention defined in `CC_H2BLB_Common`.
+      - Special handling is performed for `sret` parameters (when return values are passed via hidden arguments).
+    
+  ---
+  
+  - **`H2BLBCallLowering::lowerCall`**
+  This method lowers a function call instruction from LLVM IR into target-specific machine instructions.
+  
+    - **Key Points:**
+      - Splits function call arguments (`Info.OrigArgs`) into smaller components if necessary.
+      - Creates instructions to adjust the stack (`ADJCALLSTACKDOWN` and `ADJCALLSTACKUP`) around the call.
+      - Handles the `Callee`, which can be a symbolic name or GlobalValue.
+      - Uses `H2BLBOutgoingValueAssigner` and `OutgoingArgHandler` to:
+        - Assign outgoing arguments to registers or stack slots.
+        - Generate stores to memory or copies to registers for the arguments.
+      - Specifies which registers are clobbered during the call (`addRegMask`) using the target's calling convention.
+      - Handles the return values by copying the result into virtual registers using the `CallReturnHandler`.
+    
+  ---
+  
+  - **Helper Structures**
+    Various utility classes are used to abstract and modularize the assignment of arguments, return values, and memory handling:
+    
+    - **`H2BLBIncomingValueAssigner` and `H2BLBOutgoingValueAssigner`:**
+      - Assign incoming and outgoing arguments to registers and stack locations based on the calling convention.
+    
+    - **`IncomingArgHandler`, `FormalArgHandler`, and `CallReturnHandler`:**
+      - Provide functionality to handle arguments and return values.
+      - Deal with stack addresses, physical registers, and memory locations for incoming and outgoing arguments/returns.
+    
+    - **`OutgoingArgHandler`:**
+      - Specifically handles outgoing arguments, including aligning data based on the calling convention.
+    
+    - **`getStackValueStoreTypeHack`:**
+      - Ensures correct handling of `i8` and `i16` types (small integer types) on the stack by adjusting the type information.
+  
+  ---
+  
+  - **Key Features**
+    - **Calling Conventions:**
+       - Custom calling conventions (`CC_H2BLB_Common`, `RetCC_H2BLB_Common`) dictate how arguments and return values are handled (e.g., in registers or the stack).
+    
+    - **GlobalISel Compatibility:**
+       - This code utilizes `GlobalISel` classes like `MachineIRBuilder` to incrementally lower IR into machine instructions.
+    
+    - **Memory Management:**
+       - Handles stack allocation and memory operands via `MachinePointerInfo` and `MachineMemOperand`.
+       - Uses `FrameIndex` for stack frame allocation.
+    
+    - **Error Checking:**
+       - Validates unsupported features (`report_fatal_error` for unimplemented extensions).
+
+---
+
+- **Class Relationships**
+  - **Main Class: `H2BLBCallLowering`**
+    - Core functionality for lowering calls and returns.
+  - **Supporting Structures:**
+    - `H2BLBIncomingValueAssigner`: Assigns formal arguments.
+    - `H2BLBOutgoingValueAssigner`: Handles outgoing values during calls.
+    - `IncomingArgHandler`, `OutgoingArgHandler`: Manages argument handling at different stages of function execution.
+    - `FormalArgHandler`, `CallReturnHandler`: Special case for handling function entry and exit arguments.
+
+---
+
+- **Conclusion**
+This file defines the infrastructure for lowering function calls, arguments, and return values for the `H2BLB` target in LLVM. It uses custom calling conventions and machine-specific instructions in a modularized way, leveraging helper structures and LLVM's GlobalISel framework. The implementation ensures compatibility with `H2BLB`'s constraints, efficiently mapping IR-level constructs to machine instructions.
