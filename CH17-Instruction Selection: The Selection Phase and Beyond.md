@@ -65,3 +65,19 @@
     }
   }
   ```
+- 函数的功能就是**根据寄存器类（`TargetRegisterClass`）返回对应的寄存器组（`RegisterBank`）**，用于 GlobalISel 指令选择时约束操作数可用的寄存器组。在你给出的例子中，H2BLB 后端将所有的通用寄存器类（`GPR16`, `GPR32`, `GPR16sp`, `OnlySP`）都映射到同一个寄存器组 `GPRBRegBankID`，表明这些寄存器都属于同一个通用寄存器组。这确保了指令选择阶段，这些寄存器类的操作数都会被分配到该寄存器组中的物理寄存器。
+  ```
+  const RegisterBank &
+  H2BLBRegisterBankInfo::getRegBankFromRegClass(const TargetRegisterClass &RC,
+                                                LLT Ty) const {
+    switch (RC.getID()) {
+    default:
+      llvm_unreachable("Register class not supported");
+    case H2BLB::GPR16RegClassID:
+    case H2BLB::GPR32RegClassID:
+    case H2BLB::GPR16spRegClassID:
+    case H2BLB::OnlySPRegClassID:
+      return getRegBank(H2BLB::GPRBRegBankID);
+    }
+  }
+  ```
