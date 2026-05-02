@@ -81,3 +81,50 @@
     }
   }
   ```
+- global isel
+  ```
+  // 全局指令选择 (GlobalISel) 的核心选择函数
+  // 作用：把 Generic 指令 转换成 目标架构真正的机器指令
+  bool H2BLBInstructionSelector::select(MachineInstr &I) {
+    // 获取当前指令的操作码
+    unsigned Opc = I.getOpcode();
+  
+    // 如果这条指令 已经是 目标架构指令
+    // 并且不是 PHI / COPY 这种通用指令 → 不需要处理，直接返回 true
+    if (!isPreISelGenericOpcode(Opc) && Opc != TargetOpcode::PHI &&
+        Opc != TargetOpcode::COPY)
+      return true;
+  
+    ...
+  
+    switch (Opc) {
+    // 处理 全局指令选择里的 G_PHI（伪指令）
+    case TargetOpcode::G_PHI:
+      // 把 G_PHI 替换成 目标架构真正的 PHI 指令
+      I.setDesc(TII.get(TargetOpcode::PHI));
+      [[fallthrough]];  // 直接穿透到下面的 PHI 处理逻辑
+  
+    // 统一处理 PHI / COPY 指令
+    case TargetOpcode::PHI:
+    case TargetOpcode::COPY:
+      // 遍历指令的所有操作数（都是寄存器）
+      for (MachineOperand &MO : I.operands()) {
+        Register Reg = MO.getReg();
+  
+        // 如果是物理寄存器，不需要改，跳过
+        if (Reg.isPhysical())
+          continue;
+  
+        // 如果寄存器已经分配了寄存器类，跳过
+        const TargetRegisterClass *RC = MRI.getRegClassOrNull(Reg);
+        if (RC)
+          continue;
+  
+        // 核心：给虚拟寄存器分配正确的寄存器类
+        // 16位 → GPR16spRegClass
+        // 32位 → GPR32RegClass
+        unsigned Size = MRI.getType(Reg).getSizeInBits();
+        MRI.setRegClass(Reg, Size == 16 ? &H2BLB::GPR16spRegClass
+                                        : &H2BLB::GPR32RegClass);
+      }
+  ```
