@@ -520,3 +520,158 @@ DDG 表示调度区域内指令之间所有调度约束，即指令在最终基�
 
 **Q5：实例化子架构时不设置处理器模型会怎样？**  
 LLVM 将使用默认调度模型，调度器对子架构实际能力一无所知，很可能产生低质量调度代码。[1]
+
+**Q6：从调度角度缩短 cycle 开销的技巧？**
+        
+#### 一、延迟隐藏类（最核心）
+
+##### 技巧 1：提前调度高延迟指令（Load Hoisting）
+把 `load`（3-4 周期）、`mul`（2 周期）等高延迟指令**尽量往前挪**，让其延迟被后续无关指令的执行掩盖掉 。 [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```
+❌ 未优化：          ✅ 优化后：
+LD   R1, ...        LD   R1, ...    ← 提前 2 步
+ADD  R3, R1, R4     MUL  R5, R6     ← 掩盖 LD 延迟
+MUL  R5, R6, R7     ADD  R3, R1     ← R1 已就绪
+```
+
+在自定义策略里实现：
+
+```cpp
+// tryCandidate 中优先选 load
+if (TryCand.SU->getInstr()->mayLoad()) {
+    TryCand.Reason = Stall;  // 表示不调度会 stall
+    return true;
+}
+```
+```cpp
+enum CandReason : uint8_t {
+    NoCand,           // 0: 无候选（最低优先级）
+    Only1,            // 1: 只有 1 个候选
+    PhysReg,          // 2: 物理寄存器相关
+    RegExcess,        // 3: 寄存器溢出
+    RegCritical,      // 4: 临界寄存器压力
+    Stall,            // 5: 避免流水线停顿（关键！）
+    Cluster,          // 6: 指令聚簇（如 load/store clustering）
+    Weak,             // 7: 弱优先级
+    RegMax,           // 8: 寄存器最大化
+    ResourceReduce,   // 9: 减少资源使用
+    ResourceDemand,   // 10: 资源需求
+    BotHeightReduce,  // 11: 减少底部高度
+    BotPathReduce,    // 12: 减少底部路径
+    TopDepthReduce,   // 13: 减少顶部深度
+    TopPathReduce,    // 14: 减少顶部路径
+    NodeOrder,        // 15: 原始节点顺序（几乎最低）
+    FirstValid        // 16: 边界标记
+};
+```
+##### 技巧 2：建模转发路径（Forwarding Path）
+用 `ReadAdvance` 的正数值告诉调度器"这个操作数可以提前 N 周期读"，减少实际等待周期 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```tablegen
+def : ReadAdvance<ReadWSMULArg1, 1>;  // 吸收 1 周期，减少等待
+```
+
+效果：原本要等 2 周期，通过流水线转发实际只等 1 周期。
+
+
+
+#### 二、资源利用类
+
+##### 技巧 3：优先调度关键路径上的指令（Critical Path First）
+在 ready queue 里，优先选择**依赖链最长**的指令。这是 `GenericScheduler` 默认的重要启发式，可以通过 `tryCandidate` 中的 `SchedCandidate.Reason` 来判断和加强 。 [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+##### 技巧 4：Load/Store 聚簇（Clustering Mutation）
+相邻的内存访问合并发射，减少地址计算开销和内存控制器切换开销 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```cpp
+// 直接使用 LLVM 内置 mutation
+DAG->addMutation(createLoadClusterDAGMutation(...));
+DAG->addMutation(createStoreClusterDAGMutation(...));
+```
+
+##### 技巧 5：特定硬件指令优先调度
+对于有多周期延迟的专用指令（如 SIMD multiply、widening multiply），在策略里优先排它们 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```cpp
+if (Opc == MyTarget::WIDENING_SMUL) {
+    TryCand.Reason = Stall;
+    return true;
+}
+```
+
+#### 三、调度方向类
+
+##### 技巧 6：选择合适的调度方向
+不同方向对 cycle 开销影响不同 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+| 方向 | 特点 | 适用场景 |
+|------|------|---------|
+| **Top-down** | 优先调度生产者，充分暴露下游依赖 | in-order + 计算密集型 |
+| **Bottom-up** | 优先调度消费者，缩短 live range | 寄存器紧张场景 |
+| **Bidirectional**（默认）| 动态权衡 | 通用场景 |
+
+```cpp
+Policy.OnlyTopDown = true;  // in-order 处理器推荐
+```
+
+#### 四、模型精度类（让调度器"看清楚"才能优化准）
+
+##### 技巧 7：精确标注每条指令的延迟
+未装饰的指令默认 **1 周期**，而实际可能是 3-4 周期，调度器无法正确决策 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```tablegen
+let Latency = 3 in
+def DefaultWriteLoad : SchedWriteRes<[MemRes]>;
+def : InstRW<[DefaultWriteLoad], (instregex "^LD[^i]*$")>;
+```
+
+##### 技巧 8：设置正确的 IssueWidth
+告诉调度器每周期可发射几条指令，调度器才知道有多少"空槽"可以并行填充 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```tablegen
+def MyModel : SchedMachineModel {
+    let IssueWidth = 2;  // 每周期可同时发射 2 条指令
+}
+```
+
+##### 技巧 9：用 DDG Mutation 强制有利顺序
+当你知道某两条独立指令的某种顺序对硬件更友好（例如 bank conflict 避免），添加人工约束边 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+```cpp
+class MyMutation : public ScheduleDAGMutation {
+    void apply(ScheduleDAGInstrs *DAG) override {
+        // 在 instrB 和 instrC 之间插入依赖边
+        // 强制 instrB 先于 instrC 执行
+    }
+};
+```
+#### 五、阶段选择类
+
+##### 技巧 10：Pre-RA + Post-RA 双阶段调度
+两个阶段各有侧重，叠加使用效果更好 ： [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/34980942/212fb322-057f-40c9-97ba-fa268cde4890/Chapter18_Instruction_Scheduling.txt)
+
+| 阶段 | 主要收益 |
+|------|---------|
+| **Pre-RA 调度** | 最大化 ILP，为寄存器分配创造好排列 |
+| **Post-RA 调度** | 修复分配后产生的新停顿，精调物理寄存器顺序 |
+
+```cpp
+bool enableMachineScheduler() const override { return true; }         // Pre-RA
+bool enablePostRAMachineScheduler() const override { return true; }   // Post-RA
+```
+
+#### 速查表
+
+| 技巧 | 针对问题 | 实现位置 |
+|------|---------|---------|
+| 提前调度高延迟指令 | Load/Mul stall | `tryCandidate` |
+| 建模转发路径 | 等待周期过长 | `ReadAdvance` 正数值 |
+| 关键路径优先 | 长依赖链未覆盖 | 默认启发式已有，可加强 |
+| Load/Store 聚簇 | 内存带宽浪费 | `createLoadClusterDAGMutation` |
+| 精确延迟标注 | 调度器决策不准 | `InstRW` + `Latency` |
+| 设置 IssueWidth | 并行槽未充分利用 | `SchedMachineModel` |
+| DDG Mutation | 特定顺序更优 | `ScheduleDAGMutation` |
+| 调度方向优化 | Top-down vs Bottom-up | `overrideSchedPolicy` |
+| Pre+Post-RA 双阶段 | 单阶段遗漏优化 | `enableMachineScheduler` |
+***
