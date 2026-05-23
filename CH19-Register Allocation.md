@@ -187,13 +187,13 @@ Index  Slot  说明
 ```
 use 的 live range:  ... 32r)   ← 在 32r 结束（不含）
 def 的 live range:  
-
+```
 **场景二：Early-clobber def（不能和输入 use 共用寄存器）**
 
 ```
 use 的 live range:  ... 32r)   ← 在 32r 结束
 def 的 live range:  
-
+```
 **场景三：Dead def（定义了但立即死亡）**
 
 ```
